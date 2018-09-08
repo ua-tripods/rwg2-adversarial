@@ -1,0 +1,223 @@
+\documentclass[10pt]{extarticle}\usepackage[letterpaper]{geometry}
+\usepackage{import}
+
+%\documentclass[10pt]{extarticle}\usepackage[letterpaper]{geometry}
+%\usepackage{fullpage}
+\usepackage{enumerate}
+\usepackage[table]{xcolor}
+\usepackage{graphics}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{hhline}
+\usepackage{pbox}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{amsmath,amssymb,esint}
+\usepackage{longtable}
+\usepackage{tikz}
+\usepackage{float}
+\usepackage{pgfplots}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{empheq}
+%\usepackage{mathabx}
+
+
+%%%%%%%%%%%%%%%% TIKZ stuff %%%%%%%%%%%%%%%%
+    \pgfplotsset{compat=newest}
+    \usetikzlibrary{shapes,arrows,matrix,positioning,intersections}
+    \usetikzlibrary{calc}
+%    \usetikzlibrary{decorations.pathreplacing}
+    \usetikzlibrary{decorations} %fancier tikz abilities
+    \pgfdeclarelayer{bg}
+    \pgfsetlayers{bg,main}
+		% Define block styles
+    \tikzstyle{decision} = [diamond, draw, fill=blue!20, 
+        text width=3cm, text badly centered, node distance=3cm, inner sep=0pt]
+    \tikzstyle{block} = [rectangle, draw, fill=blue!20, 
+        text width=3cm, text centered, rounded corners, minimum height=2em]
+    \tikzstyle{line} = [draw, -latex']
+    \tikzstyle{cloud} = [draw, ellipse,fill=red!20, node distance=3cm,
+        minimum height=2em]
+
+\usetikzlibrary{decorations.text,arrows.meta}
+\usetikzlibrary{decorations.pathmorphing}
+\usetikzlibrary{decorations.markings} %hopefully give arrows
+
+\tikzset{
+  % style to apply some styles to each segment of a path
+  on each segment/.style={
+    decorate,
+    decoration={
+      show path construction,
+      moveto code={},
+      lineto code={
+        \path [#1]
+        (\tikzinputsegmentfirst) -- (\tikzinputsegmentlast);
+      },
+      curveto code={
+        \path [#1] (\tikzinputsegmentfirst)
+        .. controls
+        (\tikzinputsegmentsupporta) and (\tikzinputsegmentsupportb)
+        ..
+        (\tikzinputsegmentlast);
+      },
+      closepath code={
+        \path [#1]
+        (\tikzinputsegmentfirst) -- (\tikzinputsegmentlast);
+      },
+    },
+  },
+  % style to add an arrow in the middle of a path
+  mid arrow/.style={postaction={decorate,decoration={
+        markings,
+        mark=at position .5 with {\arrow[#1]{stealth}}
+      }}},
+}
+
+%%%%%%%%%%%%%%%% Table of Contents Stuff %%%%%%%%%%%%%%%%
+\setcounter{secnumdepth}{-1} % only chapter and sections will be numbered
+\setcounter{tocdepth}{4}
+%\setlength{\parindent}{0pt}
+
+
+%%%%%%%%%%%%%%%% Hyper Ref Stuff %%%%%%%%%%%%%%%%
+		% set up reference style
+\hypersetup{
+    linktoc=all,		% build toc with internal links
+    bookmarks=true,        	% show bookmarks bar?
+    unicode=false,         	% non-Latin chars in Acrobat bookmarks
+    pdftoolbar=true,       	% show Acrobats toolbar?
+    pdfmenubar=true,       	% show Acrobats menu?
+    pdffitwindow=false,    	% window fit to page when opened
+    pdfstartview={FitH},   	% fits width of page to the window
+    pdftitle={My title},   	% title
+    pdfauthor={Author},    	% author
+    pdfsubject={Subject},  	% subject of the document
+    pdfcreator={Creator},  	% creator of the document
+    pdfproducer={Producer},	% producer of the document
+    pdfkeywords={keyword1} {key2} {key3}, % list of keywords
+    pdfnewwindow=true,      	% links in new window
+    colorlinks=true,       	% false: boxed links; true: colore links
+    linkcolor=blue,          	% color of internal links (change box
+				% color with linkbordercolor)
+    citecolor=green,        	% color of links to bibliography
+    filecolor=magenta,      	% color of file links
+    pagebackref=true,
+    urlcolor=cyan           	% color of external links
+}
+
+%%%%%%%%%%%%%%%% My Commands/Shorthand %%%%%%%%%%%%%%%%
+\newcommand{\qed}{\hfill\ensuremath{\Box}}
+\newcommand{\qedb}{\hfill \blacksquare}
+\newcommand{\wrt}{w.r.t}
+\newcommand{\rml}{\multicolumn{1}{c}{}}
+\newcommand{\tbf}[1]{\textbf{#1}}
+\newcommand{\ib}[1]{\item \textbf{#1}}
+\newcommand{\B}{\mathcal{B}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\re}{\text{Re}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\TT}{\mathbb{T}}
+\newcommand{\T}{\mathcal{T}}
+%\newcommand{\S}{\mathcal{S}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\M}{\mathcal{M}}
+\newcommand{\MO}{\mathcal{O}}
+\newcommand{\prob}{\text{Prob}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\fl}{\text{fl}}
+\newcommand{\sign}{\text{sign}}
+\newcommand{\norm}[1]{\lvert #1 \rvert}
+\newcommand{\Norm}[1]{\lVert #1 \rVert}
+\def\tesst{https://chrome.google.com/webstore/detail/slack-bot-filter/blephhkggdennbfmdcjmlfimedknghfc}
+\def\lvector#1{\underline{#1}}
+\def\lmatrix#1{\underline{\underline{#1}}}
+\def\ltensor#1{\underline{\underline{\underline{#1}}}}
+\DeclareMathOperator\vol{\text{vol}}
+
+\newcommand*\circled[1]{\tikz[baseline=(char.base)]{
+            \node[shape=circle,draw,inner sep=2pt] (char) {#1};}}
+\newcommand{\e}{\varepsilon}
+\newcommand{\nifty}{\textbf{NIFTY}}
+
+
+\usepackage[many]{tcolorbox}
+
+\tcbset{breakable,
+skin=bicolor,
+colback=black!15!white,
+colbacklower=white,
+colframe=black!25!white,
+coltitle=black,
+fonttitle=\bfseries,
+boxrule=1pt,
+boxsep=3.0pt,
+left=0.0pt,
+right=0.0pt,
+top=0.0pt,
+bottom=0.0pt,
+middle = 1.0pt,
+arc = 0.0pt,
+outer arc = 0.0pt,
+frame style={top color=white,
+bottom color=white,draw=black},
+interior style={left color=black!20!white,right color=black!20!white},
+segmentation style={right color=white,left color=white}
+}
+
+%%%%%%%%%%%%%%%% Title Stuff %%%%%%%%%%%%%%%%
+\author{RWG2} %\\ \includegraphics{Clear-Demand-Logos-FINALCMYK.pdf}}
+\date{\today}
+\title{Notes}
+
+
+%%%%%%%%%%%%%%%% Fancy Header Stuff %%%%%%%%%%%%%%%%
+
+\fancyhead{}
+\pagestyle{fancy}
+\makeatletter %insert header on title pages
+\let\runauthor\@author
+\let\runtitle\@title
+\fancyhead[R]{test}
+\lhead[\thepage]{\textbf{\runtitle \hspace{.4cm} }\leftmark  }
+\rhead[\rightmark]{\runauthor : \today, p. \thepage  : \hyperlink{page.1}{$\Uparrow$}}
+\fancyfoot[C]{} %remove page number from footer
+%\renewcommand{\headrulewidth}{10pt}
+
+\headheight 17pt
+\headsep 10pt
+%\rhead{\hyperlink{page.1}{Table of Contents}}
+
+
+%\begin{document}
+
+%\newpage
+%test2
+%
+%\end{document}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[english]{babel}
+\newcommand{\wto}{\rightharpoonup}
+\usepackage[xindy, toc, style=tree]{glossaries}
+\usepackage{makeidx}
+\input{sumgloss}
+\makeindex
+\usepackage[totoc]{idxlayout}
+\makenoidxglossaries 
+%\makeglossaries 
+
+\begin{document}
+
+\tableofcontents
+\flushleft
+
+\section{A heading}
+\subsection{A Sub-Heading}
+some words
+
+\end{document}
