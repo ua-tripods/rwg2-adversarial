@@ -60,7 +60,8 @@ plt.show()
 # plot just the noise
 # TODO plot noise average from each class to each other
 mnoises = np.mean(noises, axis=0).reshape(28,28)
-plt.imshow(mnoises, "gray")
+mx = np.abs(mnoises).max()
+plt.imshow(mnoises, vmin=-mx, vmax=mx, cmap="RdBu")
 plt.xticks([])
 plt.yticks([])
 plt.title("Mean Noise")
