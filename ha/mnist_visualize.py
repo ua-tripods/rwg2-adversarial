@@ -30,8 +30,8 @@ cpred_a = adict["cpred_a"]
 # plt.show()
 
 
-# plot noise for all transforms
-# partition sampels by the 10 classes
+# plot noise for cartesian product
+#      partition sampels by the 10 classes
 iclass = []
 anoise = np.array(noises)
 aorigi = np.array(ox)
@@ -42,23 +42,19 @@ for i in list(range(0,10)):
                                np.where(np.array(cpred_a) == j))
         if (i >= j):
             continue
-        # if (ijclass.__len__() == 0):
-        #     mnoises = np.zeros(28*28).reshape(28,28)
-        #     onoises = np.ones(28*28).reshape(28,28)
 
         mnoises = np.mean(anoise[ijclass.tolist()], axis=0).reshape(28,28)
         onoises = np.mean(aorigi[ijclass.tolist()], axis=0).reshape(28,28)
         plt.subplot(9,9,9*i+j)
-        plt.imshow(mnoises, "gray")
+	# try Carlos's colors
+        plt.imshow(mnoises, vmin=-mx, vmax=mx, cmap="RdBu")
         plt.xticks([])
         plt.yticks([])
         plt.title("{} : {},{:.2f}".format(i,j, np.sqrt(np.var(mnoises)/np.var(onoises)))) 
         print("Plotted {} : {}".format(i,j))
-# Plot the cartesian product of transforms
 plt.show()
 
-# plot just the noise
-# TODO plot noise average from each class to each other
+# plot mean noise for everybody
 mnoises = np.mean(noises, axis=0).reshape(28,28)
 mx = np.abs(mnoises).max()
 plt.imshow(mnoises, vmin=-mx, vmax=mx, cmap="RdBu")
