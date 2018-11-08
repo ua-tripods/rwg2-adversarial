@@ -9,26 +9,29 @@ import torch.optim as optim
 from torchvision import transforms
 
 class Net(nn.Module):
-    def __init__(self):
+    def __init__(self, conf):
         super(Net, self).__init__()
 		# define the layers of the network -- place any
-                #        network you want here 
-        self.fc1 = nn.Linear(28*28, 392) # size of the image vector
-        self.fc2 = nn.Linear(  392, 196) # reduce the data several
+                #        network you want here
+        pairs = zip(conf[:-1], conf[1:])
+        self.fcs = list(nn.Linear(this_layer, next_layer)
+                       for (this_layer, next_layer) in pairs)
+        #self.fc1 = nn.Linear(conf[0]**2, conf[1]) # size of the image vector
+        #self.fc2 = nn.Linear(  conf[1], conf[2]) # reduce the data several
                                          # times 
-        self.fc3 = nn.Linear(  196, 98)  # ... 
-        self.fc4 = nn.Linear(   98, 10)  # final output must match the
+        #self.fc3 = nn.Linear(  conf[2], 98)  # ... 
+        #self.fc4 = nn.Linear(   98, 10)  # final output must match the
 					 # desired number of classes.  
 
     def forward(self, x):
 		# define the activation filters that connect layers
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
-        x = self.fc4(x)
+        for layer in self.fcs[:-1]:
+          x = F.relu(layer(x))
+        x = self.fcs[-1](x)
         return x
 
-net = Net()
+conf = [28*28, 100, 25, 10]
+net = Net(conf)
 output_fil = nn.CrossEntropyLoss() # error function 
 		# pick an optimizer -- pytorch has many
         # TODO : Look up why momentum works
@@ -53,6 +56,7 @@ testloader = torch.utils.data.DataLoader(testdata, batch_size=256,
                                          shuffle=True, num_workers=2) 
 
 for epoch in range(98):
+  closs = 0.0 
   for i, data in enumerate(trainloader, 0):
     ip, il = data
     ip, il = Variable(ip), Variable(il)
@@ -61,6 +65,7 @@ for epoch in range(98):
     loss = output_fil(out, il)
     loss.backward()
     weight_opt.step()
+    closs += loss.data[0]
     print('Epoch: {}'.format(epoch))
 
 print("Training Complete")
@@ -102,7 +107,8 @@ for param in list(net.named_parameters()):
 # with open("weights.pkl","wb") as f:
 #     import pickle 
 #     pickle.dump(weights_dict, f)
-with open("weights.pkl", "wb") as f: 
+fo = "Config-2-weights.pkl"
+with open(fo, "wb") as f: 
     import _pickle as cPickle 
     cPickle.dump(weights_dict, f)
-print("Finished dumping to weights.pkl.")
+print("Finished dumping to {}".format(fo))
