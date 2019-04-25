@@ -1,0 +1,38 @@
+Try adversarial with logistic regression instead (multilass)
+Now it's a convex problem so we can apply Principle Geodesic Analysis
+(wasserstein distance)
+
+optimal transport transform space adversarial example keaton
+
+L2 optimization 
+
+write up what a good solution (adversarial example)
+
+upscaling with linear interpolation (blinear) use cubic instead hermit
+filter
+
+Image Magic converg-filter(hermit)-ressize(200%)-image sharpen (deblur)
+pillow (python)
+
+
+summarize the variances
+rating how hard the problem was to solve
+
+reduce data to 14x14 train a new network and analyze the varainces of
+the adversarial attack
+
+dataset vector graphics (ucirvine)
+
+
+don't break on first misclassicication. use threshold on loss
+
+setup statistics dropbox and email with Mohammed and 
+
+use L2 instead of cross-entropy loss for the adversarial search
+
+implement logging for python code. 
+
+
+Graph --> Djykstra build lattice 
+
+fast marching method sethian

@@ -1,0 +1,4 @@
+
+** Standard Interactive Job:
+
+***qsub -I -N test -m bea -W group_list=dglicken -q windfall -l select=1:ncpus=28:mem=168gb:ngpus=1 -l cput=1:0:0 -l walltime=1:0:0
