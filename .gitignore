@@ -431,3 +431,8 @@ pip-selfcheck.json
 
 
 # End of https://www.gitignore.io/api/emacs,latex,python
+
+*.png
+*.pdf
+*.pkl
+*.pickle

@@ -14,7 +14,7 @@ class Net(nn.Module):
 		# define the layers of the network -- place any
                 #        network you want here
         pairs = zip(conf[:-1], conf[1:])
-        self.fcs = list(nn.Linear(this_layer, next_layer)
+        self.fcs = nn.ModuleList(nn.Linear(this_layer, next_layer)
                        for (this_layer, next_layer) in pairs)
         #self.fc1 = nn.Linear(conf[0]**2, conf[1]) # size of the image vector
         #self.fc2 = nn.Linear(  conf[1], conf[2]) # reduce the data several
@@ -29,6 +29,30 @@ class Net(nn.Module):
           x = F.relu(layer(x))
         x = self.fcs[-1](x)
         return x
+
+class Net1(nn.Module):
+    def __init__(self):
+        super(Net1, self).__init__()
+        self.conv1 = nn.Conv2d(3, 6, 5)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(6, 16, 5)
+        self.fc1 = nn.Linear(16 * 5 * 5, 120)
+        self.fc2 = nn.Linear(120, 84)
+        self.fc3 = nn.Linear(84, 10)
+
+    def forward(self, x):
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = x.view(-1, 16 * 5 * 5)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+
+
+net1 = Net1()
+crit = nn.CrossEntropyLoss()
+optimizer = optim.SGD(net1.parameters(), lr=0.001, momentum=0.9)
 
 conf = [28*28, 100, 25, 10]
 net = Net(conf)
@@ -55,7 +79,7 @@ testdata  = torchvision.datasets.MNIST(root="./mnist", train=False,
 testloader = torch.utils.data.DataLoader(testdata, batch_size=256,
                                          shuffle=True, num_workers=2) 
 
-for epoch in range(98):
+for epoch in range(1):
   closs = 0.0 
   for i, data in enumerate(trainloader, 0):
     ip, il = data
@@ -67,6 +91,7 @@ for epoch in range(98):
     weight_opt.step()
     closs += loss.data[0]
     print('Epoch: {}'.format(epoch))
+
 
 print("Training Complete")
 
