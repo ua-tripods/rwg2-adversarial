@@ -436,3 +436,4 @@ pip-selfcheck.json
 *.pdf
 *.pkl
 *.pickle
+*.eps
