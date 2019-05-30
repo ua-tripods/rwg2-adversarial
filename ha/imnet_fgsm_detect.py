@@ -1,0 +1,641 @@
+import numpy as np
+import matplotlib.pyplot as plt 
+from PIL import Image
+import torch
+from torch.autograd import Variable
+import torch.nn as nn 
+import torch.nn.functional as F 
+import torchvision 
+import torch.optim as optim 
+from torchvision import transforms
+from tqdm import *
+from scipy.sparse import identity
+from scipy.stats import multivariate_normal
+import torchvision.models 
+import pickle
+import pandas as pd
+import os
+from timeit import default_timer as timer
+from datetime import timedelta
+from collections import defaultdict
+
+# constants
+imsize = (224, 224)
+n_iter = 20
+n_real = 10
+v_scal = 40
+
+		# directory for validation images
+sfile = "C:/Users/Nexus/Google Drive/dropbox/Dropbox/UOFA/0-research/network/rwg2-adversarial/ha/imnet_fgsm.py"
+if (os.path.isfile(sfile)):
+  ddir = "C:/Users/Nexus/Desktop/Adversarial-Examples-in-PyTorch2/ILSVRC2012_img_val"
+  odir = "C:/Users/Nexus/Google Drive/dropbox/Dropbox/UOFA/0-research/network/imnet_examples_nexus"
+  ldir = "C:/Users/Nexus/Desktop/Adversarial-Examples-in-PyTorch2/ilsvrc12_imnet_labels"
+else:  
+  ddir = "/home/bwbell/Desktop/Adversarial-Examples-in-PyTorch/ilsvrc12_val_images"
+  odir = "/home/bwbell/Dropbox/UOFA/0-research/network/imnet_examples"
+		# directory for labels in ilsvrc_12
+  ldir = "/home/bwbell/Desktop/Adversarial-Examples-in-PyTorch/ilsvrc12_imnet_labels"
+		# list of files for review
+ddirs = os.listdir(ddir)
+ddirs.sort()
+# test to make sure we don't have erronious stuff in the image directory
+count = 0
+for d in ddirs:
+  if d[-5:] == ".JPEG":
+    count+=1
+if count!=len(ddirs):
+  print("warning, too many images: {}/{}".format(count, len(ddirs)))
+
+
+
+# functions
+loader = transforms.Compose([transforms.Scale(imsize), transforms.ToTensor()])
+normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+def image_loader(image_name):
+    """load image, returns tensor"""
+    image = Image.open(image_name)
+    image = image.convert("RGB") # Auto remove the "alpha" channel from png image
+    image = loader(image).float()
+    image = normalize(image).float()
+    image = image.unsqueeze(0)  #this is for VGG, may not be needed for ResNet
+    return image 
+
+def n_normalize(image_data):
+  c = image_data
+  e = (c+np.abs(np.min(c)))
+  f_x = e/np.max(np.abs(e))
+  return f_x
+
+# import labels for validation images
+fi = ldir + "/val.txt"
+il_lab = pd.read_csv(fi,delimiter=" ", header=None)
+il_lab.columns = ["img","lab"]
+il_dict = il_lab.set_index("img").T.to_dict('list')
+
+# import label names
+fi = ldir + "/labels.json"
+with open(fi,"r") as f: 
+    import json 
+    ImageNet_mapping = json.loads(f.read())
+
+# import Pretrained VGG16 model
+vgg16 = torchvision.models.vgg16(pretrained=True)
+vgg16.eval() # disable dropout, batchnorm
+SoftmaxWithXent = nn.CrossEntropyLoss()
+print (".. loaded pre-trained vgg16")
+
+#setup samples
+xs, y_trues, y_preds, noises, y_preds_adversarial = [], [], [], [], []
+
+# Grab a representative image
+i = 2899
+i = 11111
+i = 2899
+i_name = ddirs[i]
+c_cor = ImageNet_mapping[str(il_dict[i_name][0])]
+print("Checking image {} \n\tcorrect class: {}".format(i_name, c_cor))
+x = Variable(image_loader(ddir+"/"+i_name),requires_grad=True)
+
+# plot preparation:
+fig= plt.figure()
+c = n_normalize(x.detach().numpy()[0])
+plt.imshow(np.swapaxes(c,0,2))
+fig.set_size_inches(24,12)
+fo = odir+"/"+i_name[:-5]+"-rrp.png"
+fig.savefig(fo, dpi=100)  
+
+
+
+
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+# generate regular output 
+output = vgg16.forward(x)
+		# predicted class
+y_p = Variable(torch.LongTensor(np.array([output.data.numpy().argmax()])), requires_grad = False)
+		# true class
+y_t = il_dict[i_name]
+
+il_dict2 = {key: value[0] for key, value in il_dict.items()}
+li_dict = dict(map(reversed, il_dict2.items()))
+li_dict = defaultdict(list)
+{li_dict[v].append(k) for k, v in il_dict2.items()}
+li_counts = list()
+
+for key in li_dict.keys():
+  #if (value in li_dict
+  #li_dict
+  li_counts.append(len(li_dict[key]))
+
+b = np.array(list(il_dict.values())).reshape(1,50000)[0]
+
+
+print("Predicted:\t({}) {}\nTrue:\t\t({}) {}".format(
+  y_p.detach().numpy()[0],
+  ImageNet_mapping[str(y_p.detach().numpy()[0])],
+  y_t[0],
+  ImageNet_mapping[str(y_t[0])]))
+
+		# compute semblance of adversarial attack
+loss = SoftmaxWithXent(output, y_p)
+loss.backward()
+epsilon = 0.02
+x_grad     = torch.sign(x.grad.data)
+
+adv_x = x.data + epsilon*x_grad  # we do not know the min/max because of torch's own stuff
+y_a = np.argmax(vgg16.forward(Variable(adv_x)).data.numpy())
+print("Adversarial:\t({}) {}".format(
+  y_a,
+  ImageNet_mapping[str(y_a)]))
+
+# grab (some) sample(s) of the adversarial class
+
+a = li_dict[y_a]
+b = np.random.choice(a)
+b = a[0]
+# for now grab a specific one
+xs = Variable(image_loader(ddir+"/"+b),requires_grad=True)
+# plot sample from adv class:
+fig= plt.figure()
+c = n_normalize(xs.detach().numpy()[0])
+plt.imshow(np.swapaxes(c,0,2))
+fig.set_size_inches(24,12)
+fo = odir+"/"+i_name[:-5]+"-rsp.png"
+fig.savefig(fo, dpi=100)  
+
+
+
+# lookup image(s) from class
+# keep at least one of them for checking/reference. 
+
+
+# plot preparation:
+fig= plt.figure()
+c = n_normalize(adv_x.detach().numpy()[0])
+plt.imshow(np.swapaxes(c,0,2))
+fig.set_size_inches(24,12)
+fo = odir+"/"+i_name[:-5]+"-rap.png"
+fig.savefig(fo, dpi=100)  
+
+
+# test adding random noise
+m = np.zeros([n_real,3,224,224])
+m2 = np.zeros([n_real*2,3,224,224])
+m_var = 1.5
+		# start with same magnitude noise as image
+a_var0 = np.var(x.detach().numpy())/4
+a_var = a_var0
+l_var = 0
+u_var = a_var*2
+a_vars = np.linspace(0,m_var,n_iter)
+a_vars = np.zeros(n_iter)
+# Adversarial image plus noise counts
+a_counts = np.zeros(n_iter)
+# regular image plus noise counts
+r_counts = np.zeros(n_iter)
+# sample of adversarial class plus noise counts
+s_counts = np.zeros(n_iter)
+count = 0
+#rnp = np.zeros([n_real,n_iter])
+rsp = np.zeros([n_real,n_iter])
+rrp = np.zeros([n_real,n_iter])
+rap = np.zeros([n_real,n_iter])
+# define bracketing function
+def bracketting (image, net, n, tol):
+		# start with same magnitude noise as image
+  a_var0 = np.var(x.detach().numpy())/4
+  a_var = a_var0
+  l_var = 0
+  u_var = a_var*2
+  a_vars = np.zeros(n)
+  # Adversarial image plus noise counts
+  a_counts = np.zeros(n_iter)
+  count = 0
+  rap = np.zeros([n_real,n_iter])
+		# grab the classification of the image under the network
+  y_a = np.argmax(net.forward(Variable(image)).data.numpy())
+  print("Original Classification:\t({}) {}".format(
+         y_a,
+         ImageNet_mapping[str(y_a)]))
+  # check that u_var is high enough
+  print("Is u_var is high enough?")
+  
+  samp = np.random.normal(0,np.sqrt(u_var),m.shape)
+  samp_t = Variable(torch.Tensor(samp))
+  pert_a = image.data + samp_t
+  start = timer()
+  image_a = net.forward(Variable(pert_a)).data.numpy()
+  end = timer()
+  image_as = np.argmax(image_a,axis=1)
+  print("u_var:{}, count:{}".format(u_var, np.sum(image_as == y_a)))
+  while(np.sum(image_as == y_a) > n_real*tol/2):
+    u_var = u_var*2
+    samp = np.random.normal(0,np.sqrt(u_var),m.shape)
+    samp_t = Variable(torch.Tensor(samp))
+    pert_a = image.data + samp_t
+    start = timer()
+    image_a = net.forward(Variable(pert_a)).data.numpy()
+    end = timer()
+    image_as = np.argmax(image_a,axis=1)
+    print("u_var:{}, count:{}".format(u_var, np.sum(image_as == y_a)))
+    
+ 
+  # perform the bracketing 
+  for i in range(0,n_iter): #, a_var in enumerate(a_vars):
+    count+=1
+    print("Starting iteration: {}, sample variance: {}".format(count, a_var))
+  		# compute sample and its torch tensor
+    samp = np.random.normal(0,np.sqrt(a_var),m.shape)
+    samp_t = Variable(torch.Tensor(samp))
+    pert_a = image.data + samp_t
+    start = timer()
+    image_a = net.forward(Variable(pert_a)).data.numpy()
+    end = timer()
+    print("Time For {}: {}".format(n_real,timedelta(seconds=end-start)))
+    image_as = np.argmax(image_a,axis=1)
+    rap[:,i] = image_as
+
+    a_counts[i] = np.sum(image_as == y_a)
+    a_vars[i] = a_var # save old variance
+
+    print("count:{}".format(a_counts[i]))
+    if (a_counts[i] < n_real*tol): # we're too high
+        print("We're too high, going from {} to {}".format(a_var, (a_var - l_var)/2)) 
+        u_var = a_var
+        a_var = (a_var - l_var)/2
+    elif (a_counts[i] >= n_real*tol): # we're too low
+        l_var = a_var
+        print("We're too low,  going from {} to {}".format(a_var,u_var))
+        a_var = (u_var - a_var)/2
+        #u_var = u_var*2
+
+  return {"a_vars":a_vars, "a_counts":a_counts}
+  
+# for each image of a baseball, run the bracketing function and get the statistic
+# show histogram
+# compute monte-carlo likelyhood of adversarial statistic being natural given the others. 
+# generalize to random cropping. 
+
+for i in range(0,n_iter): #, a_var in enumerate(a_vars):
+  count+=1
+  print("Starting iteration: {}, sample variance: {}".format(count, a_var))
+		# compute sample and its torch tensor
+  samp = np.random.normal(0,np.sqrt(a_var),m.shape)
+  samp_t = Variable(torch.Tensor(samp))
+  # samp2 = np.random.normal(0,np.sqrt(a_var),m2.shape)
+  # samp2_t = Variable(torch.Tensor(samp2))
+
+  # v_samp = (samp - np.min(samp))/(np.max(samp)-np.min(samp))
+  # v_norm = np.linalg.norm(v_samp[0])
+  # plt.hist(samp.flatten(),100)
+  # plt.imshow(v_samp[0].swapaxes(0,2))
+  # plt.show()
+
+  pert_x = x.data + samp_t
+  pert_s = xs.data + samp_t  
+  pert_a = adv_x.data + samp_t
+  adv_sv = pert_x.detach().numpy()[0]
+
+  # plt.imshow(n_normalize(adv_sv.swapaxes(0,2).swapaxes(0,1)))
+  # c = n_normalize(x.detach().numpy()[0])
+  # plt.imshow(np.swapaxes(c,0,2).swapaxes(0,1))
+  # plt.show()
+  # plt.imshow(n_normalize(adv_sv.swapaxes(0,2).swapaxes(0,1)))
+  # c = n_normalize(adv_x.detach().numpy()[0])
+  # plt.imshow(np.swapaxes(c,0,2).swapaxes(0,1))
+  # plt.show()
+  # plt.imshow(n_normalize(adv_sv.swapaxes(0,2).swapaxes(0,1)))
+		# test time to double
+  # start = timer()
+  # y_d = vgg16.forward(Variable(samp_t)).data.numpy()
+  # y_a = np.argmax(y_d,axis=1)
+  # rnp[:,i] = y_a
+  # end = timer()
+  # print("Time For {}: {}".format(n_real,timedelta(seconds=end-start)))
+  # start = timer()
+  # y_d = vgg16.forward(Variable(samp2_t)).data.numpy()
+  # y_a = np.argmax(y_d,axis=1)
+  # rnp[:,i] = y_a
+  # end = timer()
+  # print("Time For {}: {}".format(n_real*2,timedelta(seconds=end-start)))
+  y_ds = vgg16.forward(Variable(pert_s)).data.numpy()
+  y_as = np.argmax(y_ds,axis=1)
+  rsp[:,i] = y_as
+  start = timer()
+  y_dr = vgg16.forward(Variable(pert_x)).data.numpy()
+  y_ar = np.argmax(y_dr,axis=1)
+  rrp[:,i] = y_ar
+  end = timer()
+  print("Time For {}: {}".format(n_real,timedelta(seconds=end-start)))
+  y_da = vgg16.forward(Variable(pert_a)).data.numpy()
+  y_aa = np.argmax(y_da,axis=1)
+  a_counts[i] = np.sum(y_aa == y_a)
+  r_counts[i] = np.sum(y_ar == y_t[0])
+  s_counts[i] = np.sum(y_as == y_a)  
+  a_vars[i] = a_var # save old variance
+  rap[:,i] = y_aa
+  # note that when I ran this checking against correct class, we did
+  # hit a variance number that seemed to recover lots of the original class!
+  print("r:{},a:{},s:{}".format(r_counts[i],
+                                a_counts[i],
+                                s_counts[i]))
+  if (a_counts[i] < n_real*.68): # we're too high
+      print("We're too high, going from {} to {}".format(a_var, (a_var - l_var)/2)) 
+      u_var = a_var
+      a_var = (a_var - l_var)/2
+  elif (a_counts[i] >= n_real*.68): # we're too low
+      l_var = a_var
+      print("We're too low,  going from {} to {}".format(a_var,u_var))
+      a_var = (u_var - a_var)/2
+      #u_var = u_var*2
+
+fig= plt.figure()
+plt.scatter(np.log(a_vars), a_counts, color="blue")
+plt.scatter(np.log(a_vars), r_counts, color="yellow")
+plt.scatter(np.log(a_vars), s_counts, color="green")
+fig.set_size_inches(24,12)
+fo = odir+"/"+i_name[:-5]+"-discriminate.png"
+fig.savefig(fo, dpi=100)  
+
+
+# fo = odir+"/"+i_name[:-5]+"-rnp.npy"
+# np.save(fo, rnp)
+fo = odir+"/"+i_name[:-5]+"-rrp.npy"
+np.save(fo, rrp)
+fo = odir+"/"+i_name[:-5]+"-rap.npy"
+np.save(fo, rap)
+
+
+fo = odir+"/"+"rnp.npy"
+rnp2 = np.load(fo)
+fo = odir+"/"+i_name[:-5]+"-rrp.npy"
+rrp2 = np.load(fo)
+fo = odir+"/"+i_name[:-5]+"-rap.npy"
+rap2 = np.load(fo)
+
+# plotting results
+
+vals = np.linspace(0,1,1000)
+np.random.shuffle(vals)
+cmap = plt.cm.colors.ListedColormap(plt.cm.jet(vals))
+
+
+fig= plt.figure()
+fig, ax= plt.subplots(3,sharex=True, sharey=True)
+fig.set_size_inches(24,12)
+#plt.colorbar(fig, ax=ax[0])# legend([0,1,2,3,4,5,6,7,8,9],loc='upper right')
+
+im = ax[0].imshow(rnp2, cmap=cmap)
+ax[0].set_ylabel("noise")
+fig.colorbar(im, cax=ax[0], orientation='vertical')
+im = ax[1].imshow(rrp2, cmap=cmap)
+ax[1].set_ylabel("regular")
+#fig.colorbar(im, cax=ax[1], orientation='horizontal')
+im = ax[2].imshow(rap2, cmap=cmap)
+ax[2].set_ylabel("adversarial")
+#fig.colorbar(im, cax=ax[2], orientation='horizontal')
+
+fo = odir+"/"+i_name[:-5]+"raw_plot.png"
+print("generating: {}".format(fo))
+fig.subplots_adjust(hspace=0)
+fig.set_size_inches(24,18)
+fig.savefig(fo, dpi=100)
+
+
+
+# ax[1].imshow(rrp2, cmap=cmap)
+# ax[1].set_ylabel("original")
+# ax[1].colorbar()# legend([0,1,2,3,4,5,6,7,8,9],loc='upper right')
+
+# ax[2].imshow(rap2, cmap=cmap)
+# ax[2].set_ylabel("original")
+# ax[2].colorbar()# legend([0,1,2,3,4,5,6,7,8,9],loc='upper right')
+
+
+# plt.title("{} linear steps from 0 to {}".format(m_var, n_iter))
+# plt.subplot(3,1,1)
+# plt.subplot(3,1,2)
+# plt.title("Regular Image")
+# plt.imshow(rrp2, cmap=cmap)
+# plt.colorbar()
+# plt.subplot(3,1,3)
+# plt.title("Adversarial Image")
+# plt.imshow(rap2, cmap=cmap)
+# plt.colorbar()
+
+# plt.imshow(i_disp)
+# fig.set_size_inches(24,12)
+
+# fo = ddir+"O{}A{}_varx{}_examp.png".format(cin, cpred_a,v_scal)
+# fig.savefig(fo, dpi=100)  
+
+
+# TODO do this a bunch of times for different $\sigma$ and plot them all!
+# TODO organize!
+
+
+
+y_s = ImageNet_mapping[ str(y_a) ]
+
+
+
+
+noise = (epsilon*x_grad).data.numpy()[0]
+c = adv_x.detach().numpy()[0]
+e = (c+np.abs(np.min(c)))
+f_adv_x = e/np.max(np.abs(e))
+plt.imshow(np.swapaxes(f_adv_x,0,2))
+plt.show()
+
+# Check adversarilized output 
+y_true = ImageNet_mapping[ str( int( y.data.numpy() ) ) ]
+
+
+
+
+
+if y_pred_adversarial == y_true:
+  print ("Error: Could not adversarialize image ")
+else:
+  xs.append(x.data.numpy())
+  y_preds.append( y_true )
+  y_trues.append( y_true )
+  noises.append((adv_x - x.data).numpy())
+  y_preds_adversarial.append( y_pred_adversarial )
+
+n_sh = x.data.numpy().shape
+n_sz = np.product(n_sh)
+n_sz = 400
+mean =  np.zeros(n_sz)
+m_var = np.var(noise)
+
+n_iter = 50
+n_real = 50
+v_scal = 40
+results_a = np.zeros([1000,n_iter])
+results_o = np.zeros([1000,n_iter])
+results_c = np.zeros([1000,n_iter])
+results_z = np.zeros([1000,n_iter])
+
+a_sigs = np.linspace(0,m_var*40,n_iter)
+count = 0
+for a_sig in a_sigs:
+  #cov  = a_sig*np.identity(n_sz)
+  #cov = identity(n_sz)
+  m = np.zeros([10,3,224,224])
+  #m = np.zeros([20,20,3])
+  c = 0.016*np.identity(20*20)
+  samp = np.random.normal(0,np.sqrt(a_sig),m.shape)
+  #v_samp = (samp - np.min(samp))/(np.max(samp)-np.min(samp))
+  #v_norm = np.linalg.norm(v_samp[0])
+  #plt.hist(samp.flatten(),100)
+  #plt.imshow(v_samp)
+  #plt.show()
+  
+  samp = np.random.multivariate_normal(mean, cov, n_real)
+  samp = multivariate_normal(
+  m_samp = np.sqrt(np.var(samp,axis=1)/np.var(iin_a,axis=1))
+
+y_pred_adversarial = ImageNet_mapping[ str(np.argmax(vgg16.forward(Variable(adv_x)).data.numpy())) ]
+y_true = ImageNet_mapping[ str( int( y.data.numpy() ) ) ]
+
+if y_pred_adversarial == y_true:
+  print ("Error: Could not adversarialize image ")
+else:
+  xs.append(x.data.numpy())
+  y_preds.append( y_true )
+  y_trues.append( y_true )
+  noises.append((adv_x - x.data).numpy())
+  y_preds_adversarial.append( y_pred_adversarial )
+
+
+n_sz = x.shape
+mean =  np.zeros(n_sz)
+m_var = np.var(noise)
+
+
+
+  #figure(4)
+
+  #plt.hist(m_samp)
+  #plt.title("noise magnitude of the randomly added samples")
+  # 5k samples
+  i_samp_a = samp+iin_a[0]
+  i_tens = Variable(torch.FloatTensor(i_samp_a))
+  i_samp_n = samp+iin_o
+  i_tens_n = Variable(torch.FloatTensor(i_samp_n))
+  i_samp_c = samp
+  i_tens_c = Variable(torch.FloatTensor(i_samp_c))
+  i_samp_z = np.zeros(n_sz)
+  i_tens_z = Variable(torch.FloatTensor(i_samp_z))
+
+  cpred_ao = np.argmax(net_s(i_tens).data.numpy(),axis=1)
+  a, b = np.unique(cpred_ao, return_counts=True)
+  results_a[a,count] = b
+  cpred_ao_n = np.argmax(net_s(i_tens_n).data.numpy(),axis=1)  
+  a, b = np.unique(cpred_ao_n, return_counts=True)
+  results_o[a,count] = b
+  cpred_ao_c = np.argmax(net_s(i_tens_c).data.numpy(),axis=1)  
+  a2, b2 = np.unique(cpred_ao_c, return_counts=True)
+  results_c[a2,count] = b2
+  cpred_ao_z = np.argmax(net_s(i_tens_z).data.numpy(),axis=1)  
+  a3, b3 = np.unique(cpred_ao_z, return_counts=True)
+  results_z[a3,count] = b3
+
+  count += 1
+  # illustrate the various noise configurations being added
+  print("generating replication {}/{} with sigma {}".format(count,
+                                                   n_iter, a_sig))   
+i_disp = np.zeros([2*28,4*28])
+i_disp[0*28:1*28,0*28:1*28] = iin_o.reshape(28,28)
+i_disp[0*28:1*28,1*28:2*28] = i_samp_n[0].reshape(28,28)
+i_disp[0*28:1*28,2*28:3*28] = iin_a[0].reshape(28,28)
+i_disp[0*28:1*28,3*28:4*28] = i_samp_a[0].reshape(28,28)
+i_disp[1*28:2*28,0*28:1*28] = i_samp_z.reshape(28,28)   
+i_disp[1*28:2*28,1*28:2*28] = i_samp_c[0].reshape(28,28)
+i_disp[1*28:2*28,2*28:3*28] = noise.reshape(28,28)
+i_disp[1*28:2*28,3*28:4*28] = (i_samp_c[0]+noise).reshape(28,28)
+  
+fig= plt.figure()
+plt.imshow(i_disp)
+fig.set_size_inches(24,12)
+fo = ddir+"O{}A{}_varx{}_examp.png".format(cin, cpred_a,v_scal)
+fig.savefig(fo, dpi=100)  
+#plt.imshow(i_samp_c[0].reshape(28,28))
+#plt.show()
+
+plt.figure(num=1, figsize=(24,18), dpi=100)
+
+fig, ax= plt.subplots(3,sharex=True, sharey=True)
+fig.set_size_inches(24,12)
+
+ax[0].plot(a_sigs,results_o.T, linewidth=2.0)
+ax[0].set_ylabel("original")
+ax[0].legend([0,1,2,3,4,5,6,7,8,9],loc='upper right')
+
+ax[1].plot(a_sigs,results_a.T, linewidth=2.0)
+ax[1].set_ylabel("adversarial")
+ax[1].legend([0,1,2,3,4,5,6,7,8,9],loc='upper right')
+
+
+ax[2].plot(a_sigs,results_c.T, linewidth=2.0)
+ax[2].set_ylabel("noise")
+ax[2].legend([0,1,2,3,4,5,6,7,8,9],loc='upper right')
+# ax.subplot(2,2,4)
+# ax.plot(a_sigs,results_z.T, linewidth=2.0)
+# ax.title("zeros")
+# ax.legend([0,1,2,3,4,5,6,7,8,9],loc='upper right')
+fo = ddir+"O{}A{}_varx{}.png".format(cin, cpred_a, v_scal)
+print("generating: {}".format(fo))
+fig.subplots_adjust(hspace=0)
+fig.set_size_inches(24,18)
+fig.savefig(fo, dpi=100)
+
+# Display 
+# print (y_preds[-1], " | ", y_preds_adversarial[-1])
+
+finish = 1
+
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# for imloc in tqdm(image_location_generator("/home/bwbell/Downloads/imagenet")):#/downloads/")):
+    
+#     x = Variable(image_loader(imloc), requires_grad=True)
+#     output = vgg16.forward(x)
+#     y = Variable(torch.LongTensor(np.array([output.data.numpy().argmax()])), requires_grad = False)
+#     loss = SoftmaxWithXent(output, y)
+#     loss.backward()
+
+#     # Add perturbation 
+#     epsilon = 0.02
+#     x_grad     = torch.sign(x.grad.data)
+#     adv_x   = x.data + epsilon*x_grad  # we do not know the min/max because of torch's own stuff
+
+#     # Check adversarilized output 
+#     y_pred_adversarial = ImageNet_mapping[ str(np.argmax(vgg16.forward(Variable(adv_x)).data.numpy())) ]
+#     y_true = ImageNet_mapping[ str( int( y.data.numpy() ) ) ]
+
+#     if y_pred_adversarial == y_true:
+#         print ("Error: Could not adversarialize image ")
+#     else:
+#         xs.append(x.data.numpy())
+#         y_preds.append( y_true )
+#         y_trues.append( y_true )
+#         noises.append((adv_x - x.data).numpy())
+#         y_preds_adversarial.append( y_pred_adversarial )
+
+#         # Display 
+#         # print y_preds[-1], " | ", y_preds_adversarial[-1]
+
+# import ipdb; ipdb.set_trace()
+# with open("bulk_imnet_fgsm.pkl", "w") as f: 
+#     adv_data_dict = {
+#        'xs' : xs, 
+#        'y_trues': y_trues, 
+#        'y_preds': y_preds,
+#        'noises': noises,
+#        'y_preds_adversarial': y_preds_adversarial
+#     }
+#     pickle.dump(adv_data_dict, f)
+
+
