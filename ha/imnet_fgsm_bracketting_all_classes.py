@@ -54,8 +54,6 @@ if count!=len(ddirs):
 # functions
 loader = transforms.Compose([transforms.Scale(imsize), transforms.ToTensor()])
 loader_crop = transforms.Compose([transforms.RandomCrop(imsize), transforms.ToTensor()])
-
-
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 def image_loader(image_name):
     """load image, returns tensor"""
@@ -65,6 +63,7 @@ def image_loader(image_name):
     image = normalize(image).float()
     image = image.unsqueeze(0)  #this is for VGG, may not be needed for ResNet
     return image 
+
 def image_loader_crop(i_image):
     """load image, returns tensor"""
     #image = Image.open(image_name)
@@ -73,6 +72,7 @@ def image_loader_crop(i_image):
     image = normalize(image).float()
     image = image.unsqueeze(0)  #this is for VGG, may not be needed for ResNet
     return image 
+
 
 def n_normalize(image_data):
   c = image_data
@@ -191,7 +191,7 @@ xs, y_trues, y_preds, noises, y_preds_adversarial = [], [], [], [], []
 # fo = odir+"/"+i_name[:-5]+"-rrp.png"
 # fig.savefig(fo, dpi=100)  
 
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
 i = 2899
 i = 11111
 i = 2899
@@ -270,11 +270,12 @@ for i in range(0,10):
     i,
     y_ac,
     ImageNet_mapping[str(y_ac)]))
-  
+
 
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 # grab (some) sample(s) of the adversarial class
+
 # TODO randomly cropped samples (a whole bunch)
 # TODO targetted mis-classification
 # TODO for each image, take k random crops
@@ -307,7 +308,6 @@ for i in range(0,k_img):
 # todo combine bracket variances via average(?) distribution ($P$)
 
 
-
 for a_class in range(0,1000):
   a_imgs = li_dict[a_class]
   b3 = {}; b3v = {}
@@ -329,7 +329,9 @@ for a_class in range(0,1000):
   b3vv = np.array(b3v)
     
   
+
   fo = odir+"/"+str(a_class)+"-b3.pickle"
+
   with open(fo, 'wb') as handle:
       pickle.dump(b3, handle, protocol=pickle.HIGHEST_PROTOCOL)
   with open(fo, 'rb') as handle:
@@ -340,7 +342,9 @@ for a_class in range(0,1000):
     b3v_test.append(item[1]["a_var"])
     #print(item[1]["a_var"])
   # b3v_test
+
   fo = odir+"/"+str(a_class)+"-vars.pickle"
+
   with open(fo, 'wb') as handle:
       pickle.dump(b3, handle, protocol=pickle.HIGHEST_PROTOCOL)
   with open(fo, 'rb') as handle:
@@ -382,7 +386,9 @@ for item in b_test.items():
   b3v_test.append(item[1]["a_var"])
   #print(item[1]["a_var"])
 # b3v_test
+
 fo = odir+"/"+str(a_class)+"-vars.pickle"
+
 with open(fo, 'wb') as handle:
     pickle.dump(b3, handle, protocol=pickle.HIGHEST_PROTOCOL)
 with open(fo, 'rb') as handle:
