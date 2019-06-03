@@ -14,6 +14,7 @@ import random
 import sys, os, pickle
 		#### mnist_attack ####
 
+sfile = "C:/Users/Nexus/Google Drive/dropbox/Dropbox/UOFA/0-research/network/rwg2-adversarial/ha/imnet_fgsm.py"
 if (os.path.isfile(sfile)):
   ddir = "C:/Users/Nexus/Desktop/Adversarial-Examples-in-PyTorch2/mnist_scale"
   odir = "C:/Users/Nexus/Google Drive/dropbox/Dropbox/UOFA/0-research/network/imnet_examples_nexus"
@@ -25,6 +26,7 @@ else:
 		# directory for labels in ilsvrc_12
   ldir = "/home/bwbell/Desktop/Adversarial-Examples-in-PyTorch/ilsvrc12_imnet_labels"
 
+fo    = ddir + "/Config-2-weights.pkl"
 wfile = ddir + "/Config-2-weights.pkl"
 efile = ddir + "/mnist_examples.pkl"
 
@@ -59,7 +61,7 @@ sf = 2
 sl = 28
 sw = 28
 conf = [int(sl*sw/sf/sf), int(100/sf/sf), 10]
-net = Net(conf)
+nnet = Net(conf)
 		# Error function for finding adversarial gradients 
 #output_fil = nn.CrossEntropyLoss()
 output_fil = nn.MSELoss()
@@ -69,19 +71,19 @@ output_fil = nn.MSELoss()
                 #             Default: All
                 #             FGSM   : just the image
                 # TODO: try plain gradient descent
-weight_opt = optim.SGD(params=[net.img], lr=0.001)
-weight_opt = optim.SGD(params=[net.img], lr=0.001)
+weight_opt = optim.SGD(params=[nnet.img], lr=0.001)
+weight_opt = optim.SGD(params=[nnet.img], lr=0.001)
                   #, momentum=0.5, param weight_decay=0.1)  
 
 		# load the weights from training
-weights_dict = {}
+wweights_dict = {}
 assert os.path.isfile(wfile), "Error: Invalid {} ".format(wfile)
 with open(wfile, "rb") as f:
-    weights_dict = pickle.load(f)
-for param in net.named_parameters():
-    if param[0] in weights_dict.keys():
+    wweights_dict = pickle.load(f)
+for param in nnet.named_parameters():
+    if param[0] in wweights_dict.keys():
         print("Copying: ", param[0])
-        param[1].data = weights_dict[param[0]].data 
+        param[1].data = wweights_dict[param[0]].data 
 print("Weights Loaded!")
 
 # Load examples
@@ -122,9 +124,9 @@ niter = 3000
 # cin = labels[i_sam]
 # #oneshot:
 # iin_t  = torch.tensor(iin, requires_grad=True)
-# iin_o  = net(iin_t)
+# iin_o  = nnet(iin_t)
 # cpred = torch.max(iin_o.data,1)[1][0]
-# #cpred =  np.argmax(net(iin_t).data.numpy())
+# #cpred =  np.argmax(nnet(iin_t).data.numpy())
 # bad_class = False
 # print ("True class: {} | Prediction: {}".format(cin, cpred))
 # if cin != cpred:
@@ -135,25 +137,25 @@ niter = 3000
 # ctar = l_tar[1]
 # ctar_t = Variable(torch.FloatTensor([ctar]))      
 
-# net.img.data = torch.zeros(1,784) 
+# nnet.img.data = torch.zeros(1,784) 
 # # for i in list(set(range(0,10)) - set([cin])):
 # #   icount += 1
 # #   ctar = i
 # #   total = total+1
 # #   #ctar_t = Variable(torch.LongTensor([ctar]))
 #   # Reset image
-#       # If it's not correctly classified by the network, skip it
+#       # If it's not correctly classified by the nnetwork, skip it
 #       # Optimization Loop
 # losses = np.zeros(niter)
 # for iteration in range(niter):
 #   weight_opt.zero_grad() 
-#   outputs = net(iin_t)
-#   cpred_a = np.argmax(net(iin_t).data.numpy())
-#   #cpred_aa = torch.FloatTensor(torch.argmax(net(iin_t).data))
+#   outputs = nnet(iin_t)
+#   cpred_a = np.argmax(nnet(iin_t).data.numpy())
+#   #cpred_aa = torch.FloatTensor(torch.argmax(nnet(iin_t).data))
 #   cpred_aa = torch.FloatTensor([cpred_a])
 #   xent_loss = output_fil(cpred_aa, ctar_t) 
 #   # Add regularization -- this is L2
-#   adv_loss  = xent_loss + torch.mean(torch.pow(net.img,2))
+#   adv_loss  = xent_loss + torch.mean(torch.pow(nnet.img,2))
 #   # The Big Scary Important Step
 #   losses[iteration] = adv_loss
 #   adv_loss.backward() 
@@ -172,11 +174,11 @@ niter = 3000
 #   if iteration == (niter - 1):
 #     print("Warning: Hit {} iterations, SAVE THIS FOR REFERENCE".format(niter))
 
-# noise = net.img.data.numpy()
+# noise = nnet.img.data.numpy()
 
 # if ((cpred == cin) & (cpred_a == ctar)):
 #   count = count+1
-#   mnoises = (np.array(net.img.data) - iin).reshape(28,28) 
+#   mnoises = (np.array(nnet.img.data) - iin).reshape(28,28) 
 #   onoises = np.array(iin).reshape(28,28) 
 #   print("{}/{}Found adv_example : Iter {}"+
 #         " : Noise :{:.4f}".format(icount, itotal, iteration, 
@@ -191,7 +193,7 @@ niter = 3000
 #   noise_l.append(noise.squeeze())
 # else: 
 #   print("Bad Classification: Skipped")
-
+a = np.array([label.numpy() for label in labels])
 
 for iin, cin in tqdm(zip(images, labels)):
     # if (icount > 100):
@@ -199,11 +201,11 @@ for iin, cin in tqdm(zip(images, labels)):
 		# pick a random target
                 # TODO : compute Cartesian Product
     #    ctar   = random.choice( list(set([0,1,2,3,4,5,6,7,8,9]) - set([cin])) )
-
-    iin_t  = torch.tensor(iin, requires_grad=True).float()
-    iin_o  = net(iin_t)
-    cpred = torch.max(iin_o.data,1)[1][0]
-    #cpred =  np.argmax(net(iin_t).data.numpy())
+  	# find stuff that was classified correctly !
+    iin_t  = torch.tensor(images, requires_grad=True).float()
+    iin_o  = nnet(iin_t)
+    cpred = torch.max(iin_o.data,1)[1]
+    #cpred =  np.argmax(nnet(iin_t).data.numpy())
     bad_class = False
     print ("True class: {} | Prediction: {}".format(cin, cpred))
     if cin != cpred:
@@ -218,20 +220,20 @@ for iin, cin in tqdm(zip(images, labels)):
       ctar_t = Variable(torch.FloatTensor([ctar]))      
 
       # Reset image
-      net.img.data = torch.zeros(1,len(iin_t)) 
+      nnet.img.data = torch.zeros(1,len(iin_t)) 
 
-      # If it's not correctly classified by the network, skip it
+      # If it's not correctly classified by the nnetwork, skip it
       # Optimization Loop
       losses = np.zeros(niter)
       for iteration in range(niter):
         weight_opt.zero_grad() 
-        outputs = net(iin_t)
-        cpred_a = np.argmax(net(iin_t).data.numpy())
-        #cpred_aa = torch.FloatTensor(torch.argmax(net(iin_t).data))
+        outputs = nnet(iin_t)
+        cpred_a = np.argmax(nnet(iin_t).data.numpy())
+        #cpred_aa = torch.FloatTensor(torch.argmax(nnet(iin_t).data))
         cpred_aa = torch.FloatTensor([cpred_a])
         xent_loss = output_fil(cpred_aa, ctar_t) 
         # Add regularization -- this is L2
-        adv_loss  = xent_loss + torch.mean(torch.pow(net.img,2))
+        adv_loss  = xent_loss + torch.mean(torch.pow(nnet.img,2))
         # The Big Scary Important Step
         losses[iteration] = adv_loss
         adv_loss.backward() 
@@ -250,11 +252,11 @@ for iin, cin in tqdm(zip(images, labels)):
         if iteration == (niter - 1):
           print("Warning: Hit {} iterations, SAVE THIS FOR REFERENCE".format(niter))
 
-      noise = net.img.data.numpy()
+      noise = nnet.img.data.numpy()
 
       if ((cpred.numpy() == cin.numpy()) & (cpred_a == ctar)):
         count = count+1
-        mnoises = (np.array(net.img.data) - iin).reshape(int(sw/sf),int(sl/sf)) 
+        mnoises = (np.array(nnet.img.data) - iin).reshape(int(sw/sf),int(sl/sf)) 
         onoises = np.array(iin).reshape(int(sw/sf),int(sl/sf)) 
         print("{}/{}Found adv_example : Iter {}"+
               " : Noise :{:.4f}".format(icount, itotal, iteration, 

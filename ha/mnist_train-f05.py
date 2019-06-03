@@ -9,6 +9,7 @@ import torchvision
 import torch.optim as optim 
 from torchvision import transforms
 import matplotlib.pyplot as plt
+import os
 
 class Net(nn.Module):
     def __init__(self, conf):
@@ -32,29 +33,29 @@ class Net(nn.Module):
         x = self.fcs[-1](x)
         return x
 
-class Net1(nn.Module):
-    def __init__(self):
-        super(Net1, self).__init__()
-        self.conv1 = nn.Conv2d(3, 6, 5)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+# class Net1(nn.Module):
+#     def __init__(self):
+#         super(Net1, self).__init__()
+#         self.conv1 = nn.Conv2d(3, 6, 5)
+#         self.pool = nn.MaxPool2d(2, 2)
+#         self.conv2 = nn.Conv2d(6, 16, 5)
+#         self.fc1 = nn.Linear(16 * 5 * 5, 120)
+#         self.fc2 = nn.Linear(120, 84)
+#         self.fc3 = nn.Linear(84, 10)
 
-    def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = x.view(-1, 16 * 5 * 5)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
+#     def forward(self, x):
+#         x = self.pool(F.relu(self.conv1(x)))
+#         x = self.pool(F.relu(self.conv2(x)))
+#         x = x.view(-1, 16 * 5 * 5)
+#         x = F.relu(self.fc1(x))
+#         x = F.relu(self.fc2(x))
+#         x = self.fc3(x)
+#         return x
 
 
-net1 = Net1()
-crit = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net1.parameters(), lr=0.001, momentum=0.9)
+# net1 = Net1()
+# crit = nn.CrossEntropyLoss()
+# optimizer = optim.SGD(net1.parameters(), lr=0.001, momentum=0.9)
 
 sf = 2
 sw = 28
@@ -100,7 +101,7 @@ testdata  = torchvision.datasets.MNIST(root=mdir, train=False,
 testloader = torch.utils.data.DataLoader(testdata, batch_size=256,
                                          shuffle=True, num_workers=2) 
 
-for epoch in range(11):
+for epoch in range(21):
   closs = 0.0 
   print("Starting epoch: {}".format(epoch))
   for i, data in enumerate(trainloader, 0):
