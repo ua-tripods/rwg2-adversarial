@@ -1,38 +1,55 @@
-import numpy as np 
-from PIL import Image
-import torch
-from torch.autograd import Variable
-import torch.nn as nn 
-import torch.nn.functional as F 
-#import torchvision 
-import torch.optim as optim 
-from torchvision import transforms
-from tqdm import *
 import matplotlib.pyplot as plt
+import numpy as np 
 import pickle 
+
+from   PIL import Image
 import random 
 import sys, os, pickle
+import torch
+from   torch.autograd import Variable
+import torch.optim as optim 
+import torch.nn as nn 
+import torch.nn.functional as F 
+import torchvision 
+from   torchvision import transforms
+from   tqdm import *
+
+# adversarial robustness toolkit (ART)
+import keras.backend as k
+from keras.models import Sequential
+from keras.layers import Dense, Flatten, Conv2D, MaxPooling2D, Dropout
+import numpy as np
+
+from art.attacks.fast_gradient import FastGradientMethod
+from art.attacks.iterative_method import BasicIterativeMethod
+from art.attacks.carlini import CarliniL2Method
+
+from art.classifiers import KerasClassifier
+from art.utils import load_dataset
+
 		#### mnist_attack ####
 
+# sort out directories
 sfile = "C:/Users/Nexus/Google Drive/dropbox/Dropbox/UOFA/0-research/network/rwg2-adversarial/ha/imnet_fgsm.py"
+lfile = "/home/bwbell/Dropbox/UOFA/0-research/network/rwg2-adversarial/ha/imnet_fgsm.py"
 if (os.path.isfile(sfile)):
   ddir = "C:/Users/Nexus/Desktop/Adversarial-Examples-in-PyTorch2/mnist_scale"
   odir = "C:/Users/Nexus/Google Drive/dropbox/Dropbox/UOFA/0-research/network/imnet_examples_nexus"
   ldir = "C:/Users/Nexus/Desktop/Adversarial-Examples-in-PyTorch2/ilsvrc12_imnet_labels"
-else:  
+elif (os.path.isfile(lfile)):  
   ddir = "/home/bwbell/Desktop/Adversarial-Examples-in-PyTorch/mnist_scale"
   mdir = "/home/bwbell/Desktop/Adversarial-Examples-in-PyTorch/mnist2"
   odir = "/home/bwbell/Dropbox/UOFA/0-research/network/imnet_examples"
 		# directory for labels in ilsvrc_12
   ldir = "/home/bwbell/Desktop/Adversarial-Examples-in-PyTorch/ilsvrc12_imnet_labels"
+elif (os.path.isfile(lfile)):  
+  ddir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist_scale"
+  mdir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist2"
+  odir = "/home/bwbell/Adversarial-Examples-in-Pytorch/imnet_examples"
 
 fo    = ddir + "/Config-2-weights.pkl"
 wfile = ddir + "/Config-2-weights.pkl"
 efile = ddir + "/mnist_examples.pkl"
-
-#wfile = ddir+"Dropbox/UOFA/0-research/network/rwg2-adversarial/ha/Config-2-weights.pkl"
-#efile = ddir+"Dropbox/UOFA/0-research/network/rwg2-adversarial/ha/mnist_examples.pkl"
-#wfile = "/home/bwbell/Dropbox/UOFA/0-research/network/ha/weights.pkl"
 
 # Define Attack Network
 class Net(nn.Module): 
@@ -43,10 +60,11 @@ class Net(nn.Module):
                 #        except the img layer 
         self.img = nn.Parameter(data=torch.zeros(1,conf[0]), requires_grad=True)
         pairs = zip(conf[:-1], conf[1:])
-        self.fcs = list(nn.Linear(this_layer, next_layer)
+        self.fcs = nn.ModuleList(nn.Linear(this_layer, next_layer)
                        for (this_layer, next_layer) in pairs)
+        # self.fcs = list(nn.Linear(this_layer, next_layer)
+        #                for (this_layer, next_layer) in pairs)
 					 # desired number of classes.  
-
     def forward(self, x):
 		# define the activation filters that connect layers
         x = x + self.img       # make it easy to turn this into an image
@@ -194,17 +212,31 @@ niter = 3000
 # else: 
 #   print("Bad Classification: Skipped")
 a = np.array([label.numpy() for label in labels])
+    # preliminary check for accuracy
+iin_t  = torch.tensor(images, requires_grad=True).float()
+iin_o  = nnet(iin_t)
+cpred = torch.max(iin_o.data,1)[1]
+labels_a = np.array([label.numpy() for label in labels])
+cpred_a = cpred.numpy()
+test = np.sum(cpred_a == labels_a)
+print("Accuracy: {}% : {}/{}".format(100*test/len(cpred_a), test,len(cpred_a)))
+
+
+
 
 for iin, cin in tqdm(zip(images, labels)):
+
     # if (icount > 100):
     #   break
 		# pick a random target
                 # TODO : compute Cartesian Product
-    #    ctar   = random.choice( list(set([0,1,2,3,4,5,6,7,8,9]) - set([cin])) )
-  	# find stuff that was classified correctly !
-    iin_t  = torch.tensor(images, requires_grad=True).float()
+    iin_t  = torch.tensor(iin, requires_grad=True).float()
     iin_o  = nnet(iin_t)
-    cpred = torch.max(iin_o.data,1)[1]
+    cpred = torch.max(iin_o.data,1)[1][0]
+
+   # find stuff that was classified correctly !
+
+    # skip anything we don't classify correctly to begin with
     #cpred =  np.argmax(nnet(iin_t).data.numpy())
     bad_class = False
     print ("True class: {} | Prediction: {}".format(cin, cpred))
@@ -225,6 +257,7 @@ for iin, cin in tqdm(zip(images, labels)):
       # If it's not correctly classified by the nnetwork, skip it
       # Optimization Loop
       losses = np.zeros(niter)
+
       for iteration in range(niter):
         weight_opt.zero_grad() 
         outputs = nnet(iin_t)

@@ -1,15 +1,40 @@
-#### mnist_train.py ####
+import matplotlib.pyplot as plt
 import numpy as np 
+import pickle 
+from   PIL import Image
+import random 
+import sys, os, pickle
 import torch
-from PIL import Image
-from torch.autograd import Variable
+from   torch.autograd import Variable
+import torch.optim as optim 
 import torch.nn as nn 
 import torch.nn.functional as F 
 import torchvision 
-import torch.optim as optim 
-from torchvision import transforms
-import matplotlib.pyplot as plt
-import os
+from   torchvision import transforms
+from   tqdm import *
+#### mnist_train.py ####
+
+# Sort out Directories
+sfile = "C:/Users/Nexus/Google Drive/dropbox/Dropbox/UOFA/0-research/network/rwg2-adversarial/ha/imnet_fgsm.py"
+lfile = "/home/bwbell/Dropbox/UOFA/0-research/network/rwg2-adversarial/ha/imnet_fgsm.py"
+if (os.path.isfile(sfile)):
+  ddir = "C:/Users/Nexus/Desktop/Adversarial-Examples-in-PyTorch2/mnist_scale"
+  odir = "C:/Users/Nexus/Google Drive/dropbox/Dropbox/UOFA/0-research/network/imnet_examples_nexus"
+  ldir = "C:/Users/Nexus/Desktop/Adversarial-Examples-in-PyTorch2/ilsvrc12_imnet_labels"
+elif (os.path.isfile(lfile)):  
+  ddir = "/home/bwbell/Desktop/Adversarial-Examples-in-PyTorch/mnist_scale"
+  mdir = "/home/bwbell/Desktop/Adversarial-Examples-in-PyTorch/mnist2"
+  odir = "/home/bwbell/Dropbox/UOFA/0-research/network/imnet_examples"
+		# directory for labels in ilsvrc_12
+  ldir = "/home/bwbell/Desktop/Adversarial-Examples-in-PyTorch/ilsvrc12_imnet_labels"
+elif (os.path.isfile(lfile)):  
+  ddir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist_scale"
+  mdir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist2"
+  odir = "/home/bwbell/Adversarial-Examples-in-Pytorch/imnet_examples"
+
+		# list of files for review
+ddirs = os.listdir(ddir)
+ddirs.sort()
 
 class Net(nn.Module):
     def __init__(self, conf):
@@ -19,12 +44,6 @@ class Net(nn.Module):
         pairs = zip(conf[:-1], conf[1:])
         self.fcs = nn.ModuleList(nn.Linear(this_layer, next_layer)
                        for (this_layer, next_layer) in pairs)
-        #self.fc1 = nn.Linear(conf[0]**2, conf[1]) # size of the image vector
-        #self.fc2 = nn.Linear(  conf[1], conf[2]) # reduce the data several
-                                         # times 
-        #self.fc3 = nn.Linear(  conf[2], 98)  # ... 
-        #self.fc4 = nn.Linear(   98, 10)  # final output must match the
-					 # desired number of classes.  
 
     def forward(self, x):
 		# define the activation filters that connect layers
@@ -33,29 +52,6 @@ class Net(nn.Module):
         x = self.fcs[-1](x)
         return x
 
-# class Net1(nn.Module):
-#     def __init__(self):
-#         super(Net1, self).__init__()
-#         self.conv1 = nn.Conv2d(3, 6, 5)
-#         self.pool = nn.MaxPool2d(2, 2)
-#         self.conv2 = nn.Conv2d(6, 16, 5)
-#         self.fc1 = nn.Linear(16 * 5 * 5, 120)
-#         self.fc2 = nn.Linear(120, 84)
-#         self.fc3 = nn.Linear(84, 10)
-
-#     def forward(self, x):
-#         x = self.pool(F.relu(self.conv1(x)))
-#         x = self.pool(F.relu(self.conv2(x)))
-#         x = x.view(-1, 16 * 5 * 5)
-#         x = F.relu(self.fc1(x))
-#         x = F.relu(self.fc2(x))
-#         x = self.fc3(x)
-#         return x
-
-
-# net1 = Net1()
-# crit = nn.CrossEntropyLoss()
-# optimizer = optim.SGD(net1.parameters(), lr=0.001, momentum=0.9)
 
 sf = 2
 sw = 28
@@ -73,20 +69,6 @@ def flat_trans(x):
     x.resize_(28*28)
     return x
 mnist_transform = transforms.Compose([transforms.ToTensor(), transforms.Lambda(flat_trans)])
-sfile = "C:/Users/Nexus/Google Drive/dropbox/Dropbox/UOFA/0-research/network/rwg2-adversarial/ha/imnet_fgsm.py"
-if (os.path.isfile(sfile)):
-  ddir = "C:/Users/Nexus/Desktop/Adversarial-Examples-in-PyTorch2/mnist_scale"
-  odir = "C:/Users/Nexus/Google Drive/dropbox/Dropbox/UOFA/0-research/network/imnet_examples_nexus"
-  ldir = "C:/Users/Nexus/Desktop/Adversarial-Examples-in-PyTorch2/ilsvrc12_imnet_labels"
-else:  
-  ddir = "/home/bwbell/Desktop/Adversarial-Examples-in-PyTorch/mnist_scale"
-  mdir = "/home/bwbell/Desktop/Adversarial-Examples-in-PyTorch/mnist2"
-  odir = "/home/bwbell/Dropbox/UOFA/0-research/network/imnet_examples"
-		# directory for labels in ilsvrc_12
-  ldir = "/home/bwbell/Desktop/Adversarial-Examples-in-PyTorch/ilsvrc12_imnet_labels"
-		# list of files for review
-ddirs = os.listdir(ddir)
-ddirs.sort()
 imsize = (int(sw/sf), int(sl/sf))
 loader = transforms.Compose([transforms.Scale(imsize), transforms.ToTensor()])
 toten = transforms.ToTensor()
