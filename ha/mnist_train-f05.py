@@ -31,6 +31,13 @@ elif (os.path.isfile(lfile)):
   ddir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist_scale"
   mdir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist2"
   odir = "/home/bwbell/Adversarial-Examples-in-Pytorch/imnet_examples"
+else:
+  ddir = "~/Adversarial-Examples-in-PyTorch/mnist_scale"
+  os.makedirs(ddir, exist_ok=True) 
+  mdir = "~/Adversarial-Examples-in-PyTorch/mnist2"
+  os.makedirs(mdir, exist_ok=True) 
+  odir = "~/Adversarial-Examples-in-Pytorch/imnet_examples"
+  os.makedirs(odir, exist_ok=True) 
 
 		# list of files for review
 ddirs = os.listdir(ddir)
