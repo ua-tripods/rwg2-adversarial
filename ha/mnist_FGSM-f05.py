@@ -81,8 +81,8 @@ sw = 28
 conf = [int(sl*sw/sf/sf), int(100/sf/sf), 10]
 nnet = Net(conf)
 		# Error function for finding adversarial gradients 
-#output_fil = nn.CrossEntropyLoss()
-output_fil = nn.MSELoss()
+output_fil = nn.CrossEntropyLoss()
+#output_fil = nn.MSELoss()
 		# Optimizer we'll use for gradient descent.
                 #        params : the list of all parameters the
                 #                 optimizer can change
@@ -249,7 +249,7 @@ for iin, cin in tqdm(zip(images, labels)):
       ctar = i
       total = total+1
       #ctar_t = Variable(torch.LongTensor([ctar]))
-      ctar_t = Variable(torch.FloatTensor([ctar]))      
+      ctar_t = Variable(torch.LongTensor([ctar]))      
 
       # Reset image
       nnet.img.data = torch.zeros(1,len(iin_t)) 
@@ -264,7 +264,7 @@ for iin, cin in tqdm(zip(images, labels)):
         cpred_a = np.argmax(nnet(iin_t).data.numpy())
         #cpred_aa = torch.FloatTensor(torch.argmax(nnet(iin_t).data))
         cpred_aa = torch.FloatTensor([cpred_a])
-        xent_loss = output_fil(cpred_aa, ctar_t) 
+        xent_loss = output_fil(outputs, ctar_t) 
         # Add regularization -- this is L2
         adv_loss  = xent_loss + torch.mean(torch.pow(nnet.img,2))
         # The Big Scary Important Step
