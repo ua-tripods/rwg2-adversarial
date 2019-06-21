@@ -15,37 +15,44 @@ from   torchvision import transforms
 from   tqdm import *
 
 # adversarial robustness toolkit (ART)
-import keras.backend as k
-from keras.models import Sequential
-from keras.layers import Dense, Flatten, Conv2D, MaxPooling2D, Dropout
-import numpy as np
+# import keras.backend as k
+# from keras.models import Sequential
+# from keras.layers import Dense, Flatten, Conv2D, MaxPooling2D, Dropout
+# import numpy as np
 
-from art.attacks.fast_gradient import FastGradientMethod
-from art.attacks.iterative_method import BasicIterativeMethod
-from art.attacks.carlini import CarliniL2Method
+# from art.attacks.fast_gradient import FastGradientMethod
+# from art.attacks.iterative_method import BasicIterativeMethod
+# from art.attacks.carlini import CarliniL2Method
 
-from art.classifiers import KerasClassifier
-from art.utils import load_dataset
+# from art.classifiers import KerasClassifier
+# from art.utils import load_dataset
 
 		#### mnist_attack ####
 
-# sort out directories
+# Sort out Directories
 sfile = "C:/Users/Nexus/Google Drive/dropbox/Dropbox/UOFA/0-research/network/rwg2-adversarial/ha/imnet_fgsm.py"
 lfile = "/home/bwbell/Dropbox/UOFA/0-research/network/rwg2-adversarial/ha/imnet_fgsm.py"
 if (os.path.isfile(sfile)):
-  ddir = "C:/Users/Nexus/Desktop/Adversarial-Examples-in-PyTorch2/mnist_scale"
-  odir = "C:/Users/Nexus/Google Drive/dropbox/Dropbox/UOFA/0-research/network/imnet_examples_nexus"
-  ldir = "C:/Users/Nexus/Desktop/Adversarial-Examples-in-PyTorch2/ilsvrc12_imnet_labels"
-elif (os.path.isfile(lfile)):  
-  ddir = "/home/bwbell/Desktop/Adversarial-Examples-in-PyTorch/mnist_scale"
-  mdir = "/home/bwbell/Desktop/Adversarial-Examples-in-PyTorch/mnist2"
-  odir = "/home/bwbell/Dropbox/UOFA/0-research/network/imnet_examples"
-		# directory for labels in ilsvrc_12
-  ldir = "/home/bwbell/Desktop/Adversarial-Examples-in-PyTorch/ilsvrc12_imnet_labels"
-elif (os.path.isfile(lfile)):  
-  ddir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist_scale"
-  mdir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist2"
-  odir = "/home/bwbell/Adversarial-Examples-in-Pytorch/imnet_examples"
+    ddir = "C:/Users/Nexus/Desktop/Adversarial-Examples-in-PyTorch2/mnist_scale"
+    odir = "C:/Users/Nexus/Google Drive/dropbox/Dropbox/UOFA/0-research/network/imnet_examples_nexus"
+    ldir = "C:/Users/Nexus/Desktop/Adversarial-Examples-in-PyTorch2/ilsvrc12_imnet_labels"
+elif (os.path.isfile(lfile)):
+    ddir = "/home/bwbell/Desktop/Adversarial-Examples-in-PyTorch/mnist_scale"
+    mdir = "/home/bwbell/Desktop/Adversarial-Examples-in-PyTorch/mnist2"
+    odir = "/home/bwbell/Dropbox/UOFA/0-research/network/imnet_examples"
+    # directory for labels in ilsvrc_12
+    ldir = "/home/bwbell/Desktop/Adversarial-Examples-in-PyTorch/ilsvrc12_imnet_labels"
+elif (os.path.isfile(lfile)):
+    ddir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist_scale"
+    mdir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist2"
+    odir = "/home/bwbell/Adversarial-Examples-in-Pytorch/imnet_examples"
+else:
+    ddir = "~/Adversarial-Examples-in-PyTorch/mnist_scale"
+    os.makedirs(ddir, exist_ok=True)
+    mdir = "~/Adversarial-Examples-in-PyTorch/mnist2"
+    os.makedirs(mdir, exist_ok=True)
+    odir = "~/Adversarial-Examples-in-Pytorch/imnet_examples"
+    os.makedirs(odir, exist_ok=True)
 
 fo    = ddir + "/Config-2-weights.pkl"
 wfile = ddir + "/Config-2-weights.pkl"
