@@ -129,7 +129,8 @@ for epoch in range(21):
         loss = output_fil(out, il)
         loss.backward()
         weight_opt.step()
-        closs += loss.data[0]
+        #closs += loss.data[0] # depracated
+        closs += loss.item()
         print('Epoch: {}'.format(epoch))
 
 print("Training Complete")
