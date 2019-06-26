@@ -250,6 +250,7 @@ for iin, cin in tqdm(zip(images, labels)):
     noise_l[imcount]   = []
 
 
+    TEST = False
     if (TEST == True) & (imcount > 10):
       break
     # find stuff that was classified correctly !
