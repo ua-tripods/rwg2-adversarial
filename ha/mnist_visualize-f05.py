@@ -50,26 +50,32 @@ with open(pfile, "rb") as f:
     adict = pickle.load(f) 
 
 ox = adict["ox"]
+noises  = adict["noises"]
 ctrue = adict["ctrue"]
 cpred = adict["cpred"]
-noises  = adict["noises"]
 cpred_a = adict["cpred_a"]  
 
 #visualize N random images 
 #idxs = np.random.choice(range(len(ox)), size=(20,), replace=False)
-#idxs = np.arange(0,20)+20
-idxs = 0
-for  in enumerate(idxs):
-    orig_im = ox[idx].reshape(sli,swi)
-    nse_im = noises[idx].reshape(sli,swi)
+#idx = np.arange(0,20)+20
+idx = 0
+matidx = 0
+orig_im = ox[idx].reshape(sli,swi)
+for i in range(0,len(noises[idx])):
+    noi = noises[idx][i]
+    ct  = ctrue[idx][i]
+    cp  = cpred[idx][i]
+    ca  = cpred_a[idx][i]
+    nse_im = noi.reshape(sli,swi)
     adv_im  = orig_im + nse_im
     disp_im = np.concatenate((orig_im, adv_im, nse_im), axis=1)
-    plt.subplot(5,4,matidx+1)
+    plt.subplot(3,3,matidx+1)
+    matidx += 1
     plt.imshow(disp_im, "gray")
     plt.xticks([])
     plt.yticks([])
     plt.colorbar()
-    plt.title("Orig: {} | New: {} | Adv Pert (variance: {})".format(ctrue[idx], cpred_a[idx], np.sqrt(np.var(nse_im)/np.var(orig_im))))
+    plt.title("Orig: {} | New: {} | Var: {:.2f})".format(ct, ca, np.sqrt(np.var(nse_im)/np.var(orig_im))))
 plt.show()
 
 
