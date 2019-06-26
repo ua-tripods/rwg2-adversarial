@@ -55,8 +55,8 @@ else:
     os.makedirs(odir, exist_ok=True)
 
 fo    = ddir + "/Config-2-weights.pkl"
-wfile = ddir + "/Config-2-weights.pkl"
-efile = ddir + "/mnist_examples.pkl"
+wfile = ddir + "/Config-2-weights-f1.pkl"
+efile = ddir + "/mnist_examples-f1.pkl"
 
 # Define Attack Network
 class Net(nn.Module): 
@@ -82,7 +82,7 @@ class Net(nn.Module):
         return x
     
 		# initialize our adversarial network
-sf = 2
+sf = 1
 sl = 28
 sw = 28
 conf = [int(sl*sw/sf/sf), int(100/sf/sf), 10]
@@ -324,7 +324,7 @@ for iin, cin in tqdm(zip(images, labels)):
     imcount += 1
 
 print("Found: {}/{} Adversarial Examples".format(count, total))
-fo = ddir+"mnist_attack-L2Loss-f05.pkl"
+fo = ddir+"mnist_attack-L2Loss-f1.pkl"
 with open(fo,"wb") as f: 
     save_dict = {"ox":ox, 
                  "ctrue":ctrue_l,
