@@ -27,11 +27,11 @@ elif (os.path.isfile(lfile)):
     mdir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist2"
     odir = "/home/bwbell/Adversarial-Examples-in-Pytorch/mnist_scale"
 else:
-    ddir = "~/Adversarial-Examples-in-PyTorch/mnist_scale"
+    ddir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist_scale"
     os.makedirs(ddir, exist_ok=True)
-    mdir = "~/Adversarial-Examples-in-PyTorch/mnist2"
+    mdir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist2"
     os.makedirs(mdir, exist_ok=True)
-    odir = "~/Adversarial-Examples-in-Pytorch/mnist_scale"
+    odir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist_scale"
     os.makedirs(odir, exist_ok=True)
 
 fo    = ddir + "/Config-2-weights.pkl"
