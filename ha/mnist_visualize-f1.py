@@ -38,7 +38,7 @@ fo    = ddir + "/Config-2-weights.pkl"
 wfile = ddir + "/Config-2-weights.pkl"
 efile = ddir + "/mnist_examples.pkl"
 
-pfile = ddir+"mnist_attack-L2Loss-f05.pkl"
+pfile = ddir+"mnist_attack-L2Loss-f1.pkl"
 sf = 2
 sl = 28
 sw = 28
@@ -87,14 +87,14 @@ a_max = np.max(np.abs([n_min, n_max]))
 fig1 = plt.figure()
 plt.hist(nse_all, 100)
 fig1.set_size_inches(18, 9)
-fo = odir+"/f05-hist-all.png"
+fo = odir+"/f1-hist-all.png"
 fig1.savefig(fo, dpi=100)  
 # keep these for reference later
 hsave = {}
 hsave["all"] = nse_all
 hsave["each"] = nse_var
 hsave["count"] = nse_ind
-fo = ddir+"/mnist_histograms-f05.pkl"
+fo = ddir+"/mnist_histograms-f1.pkl"
 with open(fo,"wb") as f: 
     pickle.dump(hsave, f) 
 print("Dumped Histograms to: {}".format(fo))
@@ -110,7 +110,7 @@ for i in list(range(0,10)):
           plt.hist(nse_var[i,j,range(0,int(nse_ind[i,j])+1)], 24, range=(np.min(nse_all), np.max(nse_all))) 
           print("Plotted {} : {}".format(i,j))
 fig2.set_size_inches(30, 15)
-fo = odir+"/f05-hist-each.png".format(idx, int(ctrue[idx][0]))
+fo = odir+"/f1-hist-each.png".format(idx, int(ctrue[idx][0]))
 fig2.savefig(fo, dpi=100)  
 
 # dump a bunch of examples
@@ -136,7 +136,7 @@ for idx in range(0,len(ox)):
         plt.title("Orig: {} | New: {} | Var: {:.2f})".format(ct, ca, np.sqrt(np.var(nse_im)/np.var(orig_im))))
 
     fig.set_size_inches(18, 9)
-    fo = odir+"/f05-FGSM-{}-{}.png".format(idx, int(ctrue[idx][0]))
+    fo = odir+"/f1-FGSM-{}-{}.png".format(idx, int(ctrue[idx][0]))
     fig.savefig(fo, dpi=100)  
 
 

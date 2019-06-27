@@ -230,7 +230,7 @@ test = np.sum(cpred_a == labels_a)
 print("Accuracy: {}% : {}/{}".format(100*test/len(cpred_a), test,len(cpred_a)))
 
 
-
+TEST = False
 
 for iin, cin in tqdm(zip(images, labels)):
 
@@ -250,7 +250,6 @@ for iin, cin in tqdm(zip(images, labels)):
     noise_l[imcount]   = []
 
 
-    TEST = False
     if (TEST == True) & (imcount > 10):
       break
     # find stuff that was classified correctly !
@@ -263,7 +262,7 @@ for iin, cin in tqdm(zip(images, labels)):
         bad_class = True
         print("WARNING: Bad Classification")
 
-    for i in list(set(range(0,10)) - set([cin])):
+    for i in list(set(range(0,10)) - set([int(cin.numpy())])):
       icount += 1
       ctar = i
       total = total+1
@@ -306,24 +305,30 @@ for iin, cin in tqdm(zip(images, labels)):
 
       noise = nnet.img.data.numpy()
 
-      if ((cpred.numpy() == cin.numpy()) & (cpred_a == ctar)):
-        count = count+1
-        mnoises = (np.array(nnet.img.data) - iin).reshape(int(sw/sf),int(sl/sf)) 
-        onoises = np.array(iin).reshape(int(sw/sf),int(sl/sf)) 
-        print("{}/{}Found adv_example : Iter {}: Noise :{:.4f}".format(icount, itotal, iteration, 
-        np.sqrt(np.var(mnoises)/np.var(onoises))))   
+      if (cpred.numpy() == cin.numpy()):
+        if (cpred_a != cin):
+          count = count+1
+          mnoises = (np.array(nnet.img.data) - iin).reshape(int(sw/sf),int(sl/sf)) 
+          onoises = np.array(iin).reshape(int(sw/sf),int(sl/sf)) 
+          print("{}/{}Found adv_example : Iter {}: Noise :{:.4f}".format(icount, itotal, iteration, np.sqrt(np.var(mnoises)/np.var(onoises))))   
+          if (cpred_a != ctar):
+            print("Hit Wrong Target: {} to {} instead of {}".format(cin.numpy(), cpred_a, ctar))
 
-        #print("Found adv_example : Iter {}".format(iteration))
-        # store
 
-        ctrue_l[imcount].append(cin)
-        cpred_l[imcount].append(cpred)
-        cpred_a_l[imcount].append(cpred_a)
-        noise_l[imcount].append(noise.squeeze())
-      else: 
+          #print("Found adv_example : Iter {}".format(iteration))
+          # store
+
+          ctrue_l[imcount].append(cin)
+          cpred_l[imcount].append(cpred)
+          cpred_a_l[imcount].append(cpred_a)
+          noise_l[imcount].append(noise.squeeze())
+
+        else:
+          print("Failed to find Adversarial Example")
+      else:
         print("Bad Classification: Skipped")
-    imcount += 1
 
+    imcount += 1
 print("Found: {}/{} Adversarial Examples".format(count, total))
 fo = ddir+"mnist_attack-L2Loss-f1.pkl"
 with open(fo,"wb") as f: 
