@@ -85,6 +85,8 @@ a_max = np.max(np.abs([n_min, n_max]))
 
 # plot the whole histogram
 fig1 = plt.figure()
+print("total: {}".format(len(nse_all)))
+print(nse_all)
 plt.hist(nse_all, 100)
 fig1.set_size_inches(18, 9)
 fo = ddir+"/f1-hist-all.png"
