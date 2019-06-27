@@ -87,7 +87,7 @@ a_max = np.max(np.abs([n_min, n_max]))
 fig1 = plt.figure()
 plt.hist(nse_all, 100)
 fig1.set_size_inches(18, 9)
-fo = odir+"/f1-hist-all.png"
+fo = ddir+"/f1-hist-all.png"
 fig1.savefig(fo, dpi=100)  
 print("Saved all histogram to {}".format(fo))
 # keep these for reference later
@@ -111,7 +111,7 @@ for i in list(range(0,10)):
           plt.hist(nse_var[i,j,range(0,int(nse_ind[i,j])+1)], 24, range=(np.min(nse_all), np.max(nse_all))) 
           print("Plotted {} : {}".format(i,j))
 fig2.set_size_inches(30, 15)
-fo = odir+"/f1-hist-each.png"
+fo = ddir+"/f1-hist-each.png"
 fig2.savefig(fo, dpi=100)  
 print("Saved each histogram to {}".format(fo))
 
@@ -138,7 +138,7 @@ for idx in range(0,len(ox)):
         plt.title("Orig: {} | New: {} | Var: {:.2f})".format(ct, ca, np.sqrt(np.var(nse_im)/np.var(orig_im))))
 
     fig.set_size_inches(18, 9)
-    fo = odir+"/f1-FGSM-{}-{}.png".format(idx, int(ctrue[idx][0]))
+    fo = ddir+"/f1-FGSM-{}-{}.png".format(idx, int(ctrue[idx][0]))
     fig.savefig(fo, dpi=100)  
 
 
