@@ -294,12 +294,12 @@ for iin, cin in tqdm(zip(images, labels)):
 
 
         # good enough?
-        if iteration > 1000:
-          deriv  = np.sum(np.abs((losses[(iteration-9):iteration] -
-                               losses[(iteration-10):(iteration-1)])))/9
-          if (np.abs(deriv) < 0.0001) & (np.abs(deriv) > 0.0):
-            print("Tolerance Reached")
-            break
+        # if iteration > 1000:
+        #   deriv  = np.sum(np.abs((losses[(iteration-9):iteration] -
+        #                        losses[(iteration-10):(iteration-1)])))/9
+        #   if (np.abs(deriv) < 0.0000001) & (np.abs(deriv) > 0.0):
+        #     print("Tolerance Reached")
+        #     break
             
         if iteration == (niter - 1):
           print("Warning: Hit {} iterations, SAVE THIS FOR REFERENCE".format(niter))
