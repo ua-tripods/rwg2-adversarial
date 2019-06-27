@@ -73,6 +73,7 @@ for i in range(0,len(noises.values())):
     for j in range(0,len(noi)):
       n  = noi[j]
       ca = int(cpa[j])
+      # replace variance calcuoation with sqrt(||noise||^2/||original||^2)
       nse_var[ctr, ca, int(nse_ind[ctr,ca])] = np.sqrt(np.var(n)/np.var(o))
       nse_ind[ctr, ca]+=1
       nse_all = np.append(nse_all, np.sqrt(np.var(n)/np.var(o)))
