@@ -89,6 +89,7 @@ plt.hist(nse_all, 100)
 fig1.set_size_inches(18, 9)
 fo = odir+"/f1-hist-all.png"
 fig1.savefig(fo, dpi=100)  
+print("Saved all histogram to {}".format(fo))
 # keep these for reference later
 hsave = {}
 hsave["all"] = nse_all
@@ -97,7 +98,7 @@ hsave["count"] = nse_ind
 fo = ddir+"/mnist_histograms-f1.pkl"
 with open(fo,"wb") as f: 
     pickle.dump(hsave, f) 
-print("Dumped Histograms to: {}".format(fo))
+print("Dumped Histograms to: {}".format(fo)) 
 
 
 # plot each histogram
@@ -112,6 +113,7 @@ for i in list(range(0,10)):
 fig2.set_size_inches(30, 15)
 fo = odir+"/f1-hist-each.png"
 fig2.savefig(fo, dpi=100)  
+print("Saved each histogram to {}".format(fo))
 
 # dump a bunch of examples
 for idx in range(0,len(ox)):
