@@ -39,7 +39,7 @@ wfile = ddir + "/Config-2-weights.pkl"
 efile = ddir + "/mnist_examples.pkl"
 
 pfile = ddir+"mnist_attack-L2Loss-f1.pkl"
-sf = 2
+sf = 1
 sl = 28
 sw = 28
 sli = int(sl/sf)
