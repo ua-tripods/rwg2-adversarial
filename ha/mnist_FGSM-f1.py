@@ -135,7 +135,7 @@ labels = examples["labels"]
 
 # initialize
 xs, y_trues, y_preds, y_preds_adversarial, noises = [], [], [], [], []
-ox, ctrue_l, cpred_l, cpred_a_l, noise_l = {}, {}, {}, {}, {}
+ox, ctrue_l, cpred_l, ctar_l, cpred_a_l, noise_l = {}, {}, {}, {}, {}, {}
 
 # Attack each example 
 count, total  = 0, 0;
@@ -246,6 +246,7 @@ for iin, cin in tqdm(zip(images, labels)):
     ox[imcount] = iin
     ctrue_l[imcount]   = []
     cpred_l[imcount]   = []
+    ctar_l[imcount]   = []
     cpred_a_l[imcount] = []
     noise_l[imcount]   = []
 
@@ -320,10 +321,16 @@ for iin, cin in tqdm(zip(images, labels)):
 
           ctrue_l[imcount].append(cin)
           cpred_l[imcount].append(cpred)
+          ctar_l[imcount].append(ctar)
           cpred_a_l[imcount].append(cpred_a)
           noise_l[imcount].append(noise.squeeze())
 
         else:
+          ctrue_l[imcount].append(cin)
+          cpred_l[imcount].append(cpred)
+          ctar_l[imcount].append(ctar)
+          cpred_a_l[imcount].append(cpred_a)
+          noise_l[imcount].append(noise.squeeze())
           print("Failed to find Adversarial Example")
       else:
         print("Bad Classification: Skipped")
@@ -335,6 +342,7 @@ with open(fo,"wb") as f:
     save_dict = {"ox":ox, 
                  "ctrue":ctrue_l,
                  "cpred":cpred_l,
+                 "ctar":ctar_l,                 
                  "cpred_a":cpred_a_l,
                  "noises": noise_l }
     pickle.dump(save_dict, f) 
