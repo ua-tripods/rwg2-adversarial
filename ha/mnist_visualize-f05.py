@@ -110,7 +110,7 @@ for i in list(range(0,10)):
           plt.hist(nse_var[i,j,range(0,int(nse_ind[i,j])+1)], 24, range=(np.min(nse_all), np.max(nse_all))) 
           print("Plotted {} : {}".format(i,j))
 fig2.set_size_inches(30, 15)
-fo = odir+"/f05-hist-each.png".format(idx, int(ctrue[idx][0]))
+fo = odir+"/f05-hist-each.png"
 fig2.savefig(fo, dpi=100)  
 
 # dump a bunch of examples
