@@ -102,7 +102,7 @@ print("total: {}".format(len(nse_all)))
 print(nse_all)
 plt.hist(nse_all, 100)
 fig1.set_size_inches(18, 9)
-fo = idir+"/"+fileheader+"-hist-all.png"
+fo = ddir+"/"+fileheader+"-hist-all.png"
 fig1.savefig(fo, dpi=100)  
 print("Saved all histogram to {}".format(fo))
 # keep these for reference later
@@ -126,7 +126,7 @@ for i in list(range(0,10)):
           plt.hist(nse_var[i,j,range(0,int(nse_ind[i,j])+1)], 24, range=(np.min(nse_all), np.max(nse_all))) 
           print("Plotted {} : {}".format(i,j))
 fig2.set_size_inches(30, 15)
-fo = idir+"/"+fileheader+"-hist-each.png"
+fo = ddir+"/"+fileheader+"-hist-each.png"
 fig2.savefig(fo, dpi=100)  
 print("Saved each histogram to {}".format(fo))
 
