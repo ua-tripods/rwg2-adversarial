@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np 
 import pickle 
+import argparse
 
 from   PIL import Image
 import random 
@@ -27,6 +28,22 @@ from   tqdm import *
 # from art.classifiers import KerasClassifier
 # from art.utils import load_dataset
 
+# parser = argparse.ArgumentParser(description='Grab some inputs')
+# parser.add_argument("-factor", "-fileheader", required=False)
+# parser.parse_args()
+
+# system arguments and size variables
+sf = 1
+if (len(sys.argv) > 1):
+  sf = np.float(sys.argv[1])
+fileheader = "f1"
+if (len(sys.argv) > 2):
+  fileheader = str(sys.argv[2])
+  print(fileheader)
+
+sl = 28
+sw = 28
+
 		#### mnist_attack ####
 
 # Sort out Directories
@@ -47,44 +64,58 @@ elif (os.path.isfile(lfile)):
     mdir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist2"
     odir = "/home/bwbell/Adversarial-Examples-in-Pytorch/imnet_examples"
 else:
-    ddir = "~/Adversarial-Examples-in-PyTorch/mnist_scale"
+    ddir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist_scale"
     os.makedirs(ddir, exist_ok=True)
-    mdir = "~/Adversarial-Examples-in-PyTorch/mnist2"
+    mdir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist2"
     os.makedirs(mdir, exist_ok=True)
-    odir = "~/Adversarial-Examples-in-Pytorch/imnet_examples"
+    odir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist_scale"
     os.makedirs(odir, exist_ok=True)
 
 fo    = ddir + "/Config-2-weights.pkl"
-wfile = ddir + "/Config-2-weights-f1.pkl"
-efile = ddir + "/mnist_examples-f1.pkl"
+wfile = ddir + "/Config-2-weights-"+fileheader+".pkl"
+efile = ddir + "/mnist_examples-"+fileheader+".pkl"
 
 # Define Attack Network
-class Net(nn.Module): 
+class Net(nn.Module):
     def __init__(self, conf):
         super(Net, self).__init__()
-		# define the layers of the attack network
-                #        All layers must match the training network
-                #        except the img layer 
-        self.img = nn.Parameter(data=torch.zeros(1,conf[0]), requires_grad=True)
+        # define the layers of the network -- place any
+        #        network you want here
         pairs = zip(conf[:-1], conf[1:])
         self.fcs = nn.ModuleList(nn.Linear(this_layer, next_layer)
-                       for (this_layer, next_layer) in pairs)
-        # self.fcs = list(nn.Linear(this_layer, next_layer)
-        #                for (this_layer, next_layer) in pairs)
-					 # desired number of classes.  
+                                 for (this_layer, next_layer) in pairs)
+
     def forward(self, x):
-		# define the activation filters that connect layers
-        x = x + self.img       # make it easy to turn this into an image
-        x = torch.clamp(x,0,1) 
+        # define the activation filters that connect layers
         for layer in self.fcs[:-1]:
-          x = F.relu(layer(x))
+            x = F.relu(layer(x))
         x = self.fcs[-1](x)
         return x
+# class Net(nn.Module): 
+#     def __init__(self, conf):
+#         super(Net, self).__init__()
+# 		# define the layers of the attack network
+#                 #        All layers must match the training network
+#                 #        except the img layer 
+#         self.img = nn.Parameter(data=torch.zeros(1,conf[0]), requires_grad=True)
+#         pairs = zip(conf[:-1], conf[1:])
+#         self.fcs = nn.ModuleList(nn.Linear(this_layer, next_layer)
+#                        for (this_layer, next_layer) in pairs)
+#         # self.fcs = list(nn.Linear(this_layer, next_layer)
+#         #                for (this_layer, next_layer) in pairs)
+# 					 # desired number of classes.  
+#     def forward(self, x):
+# 		# define the activation filters that connect layers
+#         x = x + self.img       # make it easy to turn this into an image
+#         x = torch.clamp(x,0,1) 
+#         for layer in self.fcs[:-1]:
+#           x = F.relu(layer(x))
+#         x = self.fcs[-1](x)
+#         return x
     
 		# initialize our adversarial network
-sf = 1
-sl = 28
-sw = 28
+# todo make this a user-parameter
+
 conf = [int(sl*sw/sf/sf), int(100/sf/sf), 10]
 nnet = Net(conf)
 		# Error function for finding adversarial gradients 
@@ -96,8 +127,8 @@ output_fil = nn.CrossEntropyLoss()
                 #             Default: All
                 #             FGSM   : just the image
                 # TODO: try plain gradient descent
-weight_opt = optim.SGD(params=[nnet.img], lr=0.001)
-weight_opt = optim.SGD(params=[nnet.img], lr=0.001)
+#weight_opt = optim.SGD(params=[nnet.img], lr=0.001)
+#weight_opt = optim.SGD(params=[nnet.img], lr=0.001)
                   #, momentum=0.5, param weight_decay=0.1)  
 
 		# load the weights from training
@@ -135,7 +166,7 @@ labels = examples["labels"]
 
 # initialize
 xs, y_trues, y_preds, y_preds_adversarial, noises = [], [], [], [], []
-ox, ctrue_l, cpred_l, ctar_l, cpred_a_l, noise_l = {}, {}, {}, {}, {}, {}
+ox, ctrue_l, cpred_l, cstep_l, ctar_l, cpred_a_l, noise_l = {}, {}, {}, {}, {}, {}, {}
 
 # Attack each example 
 count, total  = 0, 0;
@@ -223,7 +254,7 @@ a = np.array([label.numpy() for label in labels])
     # preliminary check for accuracy
 iin_t  = torch.tensor(images, requires_grad=True).float()
 iin_o  = nnet(iin_t)
-cpred = torch.argmax(iin_o.data)
+cpred = torch.argmax(iin_o.data,1)
 labels_a = np.array([label.numpy() for label in labels])
 cpred_a = cpred.numpy()
 test = np.sum(cpred_a == labels_a)
@@ -237,16 +268,17 @@ for iin, cin in tqdm(zip(images, labels)):
     # if (icount > 100):
     #   break
 		# pick a random target
-                # TODO : compute Cartesian Product
-    iin_t  = torch.tensor(iin, requires_grad=True).float()
-    iin_o  = nnet(iin_t)
+    iin_t = torch.tensor(iin, requires_grad=True).float()
+
+    iin_o = nnet(iin_t)
     cpred = torch.argmax(iin_o.data)
 
     # keep what we find:
     ox[imcount] = iin
-    ctrue_l[imcount]   = []
-    cpred_l[imcount]   = []
-    ctar_l[imcount]   = []
+    ctrue_l[imcount]   = cin
+    cpred_l[imcount]   = cpred
+    cstep_l[imcount]   = 0
+    ctar_l[imcount]    = []
     cpred_a_l[imcount] = []
     noise_l[imcount]   = []
 
@@ -263,15 +295,17 @@ for iin, cin in tqdm(zip(images, labels)):
         bad_class = True
         print("WARNING: Bad Classification")
 
+      
     for i in list(set(range(0,10)) - set([int(cin.numpy())])):
       icount += 1
       ctar = i
       total = total+1
+      noise = Variable(torch.zeros(1,len(iin_t)),requires_grad=True)
       #ctar_t = Variable(torch.LongTensor([ctar]))
       ctar_t = Variable(torch.LongTensor([ctar]))      
 
-      # Reset image
-      nnet.img.data = torch.zeros(1,len(iin_t)) 
+      # Reset image old as of not using internal optimizer
+      #nnet.img.data = torch.zeros(1,len(iin_t)) 
 
       # If it's not correctly classified by the nnetwork, skip it
       # Optimization Loop
@@ -279,20 +313,25 @@ for iin, cin in tqdm(zip(images, labels)):
       losses = np.zeros(niter)
 
       for iteration in range(niter):
-        weight_opt.zero_grad() 
-        outputs = nnet(iin_t)
-        cpred_a = np.argmax(nnet(iin_t).data.numpy())
-        #cpred_aa = torch.FloatTensor(torch.argmax(nnet(iin_t).data))
-        cpred_aa = torch.FloatTensor([cpred_a])
+        #weight_opt.zero_grad() 
+        outputs = nnet(iin_t+noise)
+        cpred_a = int(torch.argmax(outputs))# nnet(iin_t).data.numpy())
+        # stop once we break the classification
+        # note that we can keep going here.
+        # TODO play with stopping condition
+        if (cpred_a == ctar):# & iteration > 30):
+          break
         xent_loss = output_fil(outputs, ctar_t) 
         # Add regularization -- this is L2
-        adv_loss  = xent_loss + torch.mean(torch.pow(nnet.img,2))
+        adv_loss  = xent_loss + torch.mean(torch.pow(noise,2))
         # The Big Scary Important Step
         losses[iteration] = adv_loss
         adv_loss.backward() 
-        weight_opt.step() 
-        # keep optimizing Until classif_op == ctar_t
 
+        epsilon = 0.01
+        grad  = torch.sign(noise.grad.data)
+        noise = Variable(noise - epsilon*grad, requires_grad=True)
+	# todo histogram of number of steps -- want this to be nicely distrubuted, not clustered around 1 or 3000
 
         # good enough?
         # if iteration > 1000:
@@ -305,13 +344,13 @@ for iin, cin in tqdm(zip(images, labels)):
         if iteration == (niter - 1):
           print("Warning: Hit {} iterations, SAVE THIS FOR REFERENCE".format(niter))
 
-      noise = nnet.img.data.numpy()
+      #noise = nnet.img.data.numpy()
 
       if (cpred.numpy() == cin.numpy()):
         if (cpred_a != cin):
           count = count+1
-          mnoises = (np.array(nnet.img.data) - iin).reshape(int(sw/sf),int(sl/sf)) 
-          onoises = np.array(iin).reshape(int(sw/sf),int(sl/sf)) 
+          mnoises = noise.detach().numpy()# (np.array(nnet.img.data) - iin).reshape(int(sw/sf),int(sl/sf)) 
+          onoises = np.array(iin)# .reshape(int(sw/sf),int(sl/sf)) 
           print("{}/{}Found adv_example : Iter {}: Noise :{:.4f}".format(icount, itotal, iteration, np.sqrt(np.var(mnoises)/np.var(onoises))))   
           if (cpred_a != ctar):
             print("Hit Wrong Target: {} to {} instead of {}".format(cin.numpy(), cpred_a, ctar))
@@ -319,26 +358,22 @@ for iin, cin in tqdm(zip(images, labels)):
 
           #print("Found adv_example : Iter {}".format(iteration))
           # store
-
-          ctrue_l[imcount].append(cin)
-          cpred_l[imcount].append(cpred)
+          cstep_l[imcount] = iteration
           ctar_l[imcount].append(ctar)
           cpred_a_l[imcount].append(cpred_a)
           noise_l[imcount].append(noise.squeeze())
 
         else:
-          ctrue_l[imcount].append(cin)
-          cpred_l[imcount].append(cpred)
           ctar_l[imcount].append(ctar)
           cpred_a_l[imcount].append(cpred_a)
           noise_l[imcount].append(noise.squeeze())
           print("Failed to find Adversarial Example")
       else:
-        print("Bad Classification: {} instead of {} Skipped".format(cpred, ctrue))
+        print("Bad Classification: {} instead of {} Skipped".format(cpred, cin))
 
     imcount += 1
 print("Found: {}/{} Adversarial Examples".format(count, total))
-fo = ddir+"mnist_attack-L2Loss-f1.pkl"
+fo = ddir+"mnist_attack-L2Loss-"+fileheader+".pkl"
 with open(fo,"wb") as f: 
     save_dict = {"ox":ox, 
                  "ctrue":ctrue_l,
