@@ -14,29 +14,32 @@ sfile = "C:/Users/Nexus/Google Drive/dropbox/Dropbox/UOFA/0-research/network/rwg
 lfile = "/home/bwbell/Dropbox/UOFA/0-research/network/rwg2-adversarial/ha/imnet_fgsm.py"
 if (os.path.isfile(sfile)):
     ddir = "C:/Users/Nexus/Desktop/Adversarial-Examples-in-PyTorch2/mnist_scale"
+    idir = "C:/Users/Nexus/Desktop/Adversarial-Examples-in-PyTorch2/mnist_scale/img"
+
     odir = "C:/Users/Nexus/Google Drive/dropbox/Dropbox/UOFA/0-research/network/imnet_examples_nexus"
     ldir = "C:/Users/Nexus/Desktop/Adversarial-Examples-in-PyTorch2/ilsvrc12_imnet_labels"
 elif (os.path.isfile(lfile)):
     ddir = "/home/bwbell/Desktop/Adversarial-Examples-in-PyTorch/mnist_scale"
+    idir = "/home/bwbell/Desktop/Adversarial-Examples-in-PyTorch/mnist_scale/img"
     mdir = "/home/bwbell/Desktop/Adversarial-Examples-in-PyTorch/mnist2"
     odir = "/home/bwbell/Desktop/Adversarial-Examples-in-PyTorch/mnist_scale"
     # directory for labels in ilsvrc_12
     ldir = "/home/bwbell/Desktop/Adversarial-Examples-in-PyTorch/ilsvrc12_imnet_labels"
 elif (os.path.isfile(lfile)):
     ddir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist_scale"
+    idir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist_scale/img"
     mdir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist2"
     odir = "/home/bwbell/Adversarial-Examples-in-Pytorch/mnist_scale"
 else:
     ddir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist_scale"
     os.makedirs(ddir, exist_ok=True)
+    idir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist_scale/img"
+    os.makedirs(idir, exist_ok=True)
     mdir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist2"
     os.makedirs(mdir, exist_ok=True)
     odir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist_scale"
     os.makedirs(odir, exist_ok=True)
 
-fo    = ddir + "/Config-2-weights.pkl"
-wfile = ddir + "/Config-2-weights.pkl"
-efile = ddir + "/mnist_examples.pkl"
 
 sf = 1
 if (len(sys.argv) > 1):
@@ -49,6 +52,9 @@ if (len(sys.argv) > 2):
 sl = 28
 sw = 28
 
+fo    = ddir + "/Config-2-weights.pkl"
+wfile = ddir + "/Config-2-weights-"+fileheader+".pkl"
+efile = ddir + "/mnist_examples-"+fileheader+".pkl"
 pfile = ddir+"mnist_attack-L2Loss-"+fileheader+".pkl"
 
 #pfile = "C:/Users/DuxLiteratum/Google Drive/dropbox/Dropbox/UOFA/0-research/network/rwg2-adversarial/2018-10-01-mnist_attack.pkl" 
@@ -96,7 +102,7 @@ print("total: {}".format(len(nse_all)))
 print(nse_all)
 plt.hist(nse_all, 100)
 fig1.set_size_inches(18, 9)
-fo = ddir+"/"+fileheader+"-hist-all.png"
+fo = idir+"/"+fileheader+"-hist-all.png"
 fig1.savefig(fo, dpi=100)  
 print("Saved all histogram to {}".format(fo))
 # keep these for reference later
@@ -120,7 +126,7 @@ for i in list(range(0,10)):
           plt.hist(nse_var[i,j,range(0,int(nse_ind[i,j])+1)], 24, range=(np.min(nse_all), np.max(nse_all))) 
           print("Plotted {} : {}".format(i,j))
 fig2.set_size_inches(30, 15)
-fo = ddir+"/"+fileheader+"-hist-each.png"
+fo = idir+"/"+fileheader+"-hist-each.png"
 fig2.savefig(fo, dpi=100)  
 print("Saved each histogram to {}".format(fo))
 
@@ -150,7 +156,7 @@ for idx in range(0,len(ox)):
         plt.title("Orig: {} | New: {} | Var: {:.2f})".format(ct, ca, np.sqrt(np.var(nse_im)/np.var(orig_im))))
 
     fig.set_size_inches(18, 9)
-    fo = ddir+"/"+fileheader+"-FGSM-{}-{}.png".format(idx, int(ctrue[idx][0]))
+    fo = idir+"/"+fileheader+"-FGSM-{}-{}.png".format(idx, int(ctrue[idx][0]))
     fig.savefig(fo, dpi=100)  
 
 
