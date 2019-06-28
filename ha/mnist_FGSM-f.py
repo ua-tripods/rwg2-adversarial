@@ -131,6 +131,7 @@ output_fil = nn.CrossEntropyLoss()
 #weight_opt = optim.SGD(params=[nnet.img], lr=0.001)
                   #, momentum=0.5, param weight_decay=0.1)  
 
+# TODO check whether we're already trained maybe run training if we're not. 
 		# load the weights from training
 wweights_dict = {}
 assert os.path.isfile(wfile), "Error: Invalid {} ".format(wfile)
