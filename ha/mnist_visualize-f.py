@@ -160,7 +160,7 @@ for idx in range(0,len(ox)):
         plt.title("Orig: {} | New: {} | Var: {:.2f})".format(ct, ca, np.sqrt(np.var(nse_im)/np.var(orig_im))))
 
     fig.set_size_inches(18, 9)
-    fo = idir+"/"+fileheader+"-FGSM-{}-{}.png".format(idx, int(ctrue[idx][0]))
+    fo = idir+"/"+fileheader+"-FGSM-{}-{}.png".format(idx, int(ctrue[idx]))
     fig.savefig(fo, dpi=100)  
 
 
