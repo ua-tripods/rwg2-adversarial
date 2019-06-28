@@ -12,6 +12,7 @@ import torch.nn.functional as F
 import torchvision
 from torchvision import transforms
 from tqdm import *
+from conf import *
 
 #### mnist_train.py ####
 
@@ -65,9 +66,10 @@ class Net(nn.Module):
 sf = 1
 if (len(sys.argv) > 1):
   sf = np.float(sys.argv[1])
-fileheader = "f{}".format(sf)
+cm = "s1"
 if (len(sys.argv) > 2):
-  fileheader = str(sys.argv[2])
+  cw = sys.argv[2]
+fileheader = "f{}-{}".format(sf, cw)
 print("File Header: {}".format(fileheader))
 print("Running With Scaling Factor {} (1/sf)".format(1/sf))
 
@@ -75,7 +77,8 @@ sl = 28
 sw = 28
 
 #conf = [int(sl * sw / sf / sf), int(100 / sf / sf), 10]
-conf = [int(sl*sw/sf/sf), 100, 50, 10]
+conf = net_config("s1", sl, sw, sf)
+
 net = Net(conf)
 output_fil = nn.CrossEntropyLoss()  # error function
 # pick an optimizer -- pytorch has many
