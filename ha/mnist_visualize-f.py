@@ -81,7 +81,7 @@ for i in range(0,len(noises.values())):
     noi = list(noises.values())[i]# k, noi in noises.values():
     o   = ox[i]
     cpa = list(cpred_a.values())[i]
-    ctr = int(list(ctrue.values())[i][0])
+    ctr = int(list(ctrue.values())[i])
     for j in range(0,len(noi)):
       n  = noi[j]
       ca = int(cpa[j])
