@@ -65,10 +65,11 @@ class Net(nn.Module):
 sf = 1
 if (len(sys.argv) > 1):
   sf = np.float(sys.argv[1])
-fileheader = "f1"
+fileheader = "f{}".format(sf)
 if (len(sys.argv) > 2):
   fileheader = str(sys.argv[2])
   print(fileheader)
+print("Running With Scaling Factor {} (1/sf)".format(1/sf))
 
 sl = 28
 sw = 28

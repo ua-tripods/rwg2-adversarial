@@ -44,13 +44,16 @@ else:
 sf = 1
 if (len(sys.argv) > 1):
   sf = np.float(sys.argv[1])
-fileheader = "f1"
+fileheader = "f{}".format(sf)
 if (len(sys.argv) > 2):
   fileheader = str(sys.argv[2])
   print(fileheader)
+print("Running With Scaling Factor {} (1/sf)".format(1/sf))
 
 sl = 28
 sw = 28
+sli = int(sl/sf)
+swi = int(sw/sf)
 
 fo    = ddir + "/Config-2-weights.pkl"
 wfile = ddir + "/Config-2-weights-"+fileheader+".pkl"
@@ -81,9 +84,9 @@ for i in range(0,len(noises.values())):
     noi = list(noises.values())[i]# k, noi in noises.values():
     o   = ox[i]
     cpa = list(cpred_a.values())[i]
-    ctr = int(list(ctrue.values())[i][0])
+    ctr = int(list(ctrue.values())[i])
     for j in range(0,len(noi)):
-      n  = noi[j]
+      n  = noi[j].detach().numpy()
       ca = int(cpa[j])
       # replace variance calcuoation with sqrt(||noise||^2/||original||^2)
       nse_var[ctr, ca, int(nse_ind[ctr,ca])] = np.sqrt(np.var(n)/np.var(o))
@@ -134,17 +137,17 @@ print("Saved each histogram to {}".format(fo))
 for idx in range(0,len(ox)):
   matidx = 0
   if (idx % 500 == 0):
-    print("Finished dumping through {}/{}".format(idx, length(ox)))
+    print("Finished dumping through {}/{}".format(idx, len(ox)))
 
   orig_im = ox[idx].reshape(sli,swi)
   if (len(noises[idx]) > 0):
+    ct  = int(ctrue[idx])
+    cp  = int(cpred[idx])
     fig= plt.figure()
     for i in range(0,len(noises[idx])):
         noi = noises[idx][i]
-        ct  = ctrue[idx][i]
-        cp  = cpred[idx][i]
         ca  = cpred_a[idx][i]
-        nse_im = noi.reshape(sli,swi)
+        nse_im = noi.detach().numpy().reshape(sli,swi)
         adv_im  = orig_im + nse_im
         disp_im = np.concatenate((orig_im, adv_im, nse_im), axis=1)
         plt.subplot(3,3,matidx+1)
