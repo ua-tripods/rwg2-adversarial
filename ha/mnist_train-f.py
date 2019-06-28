@@ -74,7 +74,8 @@ print("Running With Scaling Factor {} (1/sf)".format(1/sf))
 sl = 28
 sw = 28
 
-conf = [int(sl * sw / sf / sf), int(100 / sf / sf), 10]
+#conf = [int(sl * sw / sf / sf), int(100 / sf / sf), 10]
+conf = [int(sl*sw/sf/sf), 100, 50, 10]
 net = Net(conf)
 output_fil = nn.CrossEntropyLoss()  # error function
 # pick an optimizer -- pytorch has many
@@ -102,7 +103,7 @@ testdata = torchvision.datasets.MNIST(root=mdir, train=False,
                                       download=True,
                                       transform=mnist_transform)
 testloader = torch.utils.data.DataLoader(testdata, batch_size=256,
-                                         shuffle=True, num_workers=2)
+                                         shuffle=False, num_workers=2)
 
 for epoch in range(21):
     closs = 0.0

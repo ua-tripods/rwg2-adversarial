@@ -117,7 +117,10 @@ class Net(nn.Module):
 		# initialize our adversarial network
 # todo make this a user-parameter
 
-conf = [int(sl*sw/sf/sf), int(100/sf/sf), 10]
+
+# conf = [int(sl*sw/sf/sf), int(100/sf/sf), 10]
+# TODO: put conf in file and fileheader
+conf = [int(sl*sw/sf/sf), 100, 50, 10]
 nnet = Net(conf)
 		# Error function for finding adversarial gradients 
 output_fil = nn.CrossEntropyLoss()
@@ -334,14 +337,6 @@ for iin, cin in tqdm(zip(images, labels)):
         grad  = torch.sign(noise.grad.data)
         noise = Variable(noise - epsilon*grad, requires_grad=True)
 	# todo histogram of number of steps -- want this to be nicely distrubuted, not clustered around 1 or 3000
-
-        # good enough?
-        # if iteration > 1000:
-        #   deriv  = np.sum(np.abs((losses[(iteration-9):iteration] -
-        #                        losses[(iteration-10):(iteration-1)])))/9
-        #   if (np.abs(deriv) < 0.0000001) & (np.abs(deriv) > 0.0):
-        #     print("Tolerance Reached")
-        #     break
             
         if iteration == (niter - 1):
           print("Warning: Hit {} iterations, SAVE THIS FOR REFERENCE".format(niter))
