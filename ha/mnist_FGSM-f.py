@@ -39,7 +39,7 @@ if (len(sys.argv) > 1):
 fileheader = "f{}".format(sf)
 if (len(sys.argv) > 2):
   fileheader = str(sys.argv[2])
-  print(fileheader)
+print("File Header: {}".format(fileheader))
 print("Running With Scaling Factor {} (1/sf)".format(1/sf))
 
 sl = 28

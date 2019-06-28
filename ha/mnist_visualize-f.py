@@ -47,7 +47,7 @@ if (len(sys.argv) > 1):
 fileheader = "f{}".format(sf)
 if (len(sys.argv) > 2):
   fileheader = str(sys.argv[2])
-  print(fileheader)
+print("File Header: {}".format(fileheader))
 print("Running With Scaling Factor {} (1/sf)".format(1/sf))
 
 sl = 28
@@ -106,6 +106,7 @@ print(nse_all)
 plt.hist(nse_all, 100)
 fig1.set_size_inches(18, 9)
 fo = ddir+"/"+fileheader+"-hist-all.png"
+plt.title("Overall Histogram, Mean: {}".format(np.mean(nse_all)))
 fig1.savefig(fo, dpi=100)  
 print("Saved all histogram to {}".format(fo))
 # keep these for reference later
@@ -136,7 +137,7 @@ print("Saved each histogram to {}".format(fo))
 # dump a bunch of examples
 for idx in range(0,len(ox)):
   matidx = 0
-  if (idx % 500 == 0):
+  if (idx % 50 == 0):
     print("Finished dumping through {}/{}".format(idx, len(ox)))
 
   orig_im = ox[idx].reshape(sli,swi)
