@@ -7,6 +7,14 @@ import csv
 from   tqdm import *
 		# mnist_visualize
 
+def n_mag(ni, oi, method):
+  if method == "l2":
+    print("not written yet")
+    # replace variance calcuoation with sqrt(||noise||^2/||original||^2)
+    return np.sqrt(np.linalg.norm(ni)/np.linalg.norm(oi))
+  else:
+    return np.sqrt(np.var(ni)/np.var(oi))
+
 #pfile = "C:/Users/Nexus/Google Drive/dropbox/Dropbox/UOFA/0-research/network/rwg2-adversarial/2018-10-01-mnist_attack.pkl" 
 
 # Sort out Directories
@@ -44,9 +52,10 @@ else:
 sf = 1
 if (len(sys.argv) > 1):
   sf = np.float(sys.argv[1])
-fileheader = "f{}".format(sf)
+cw = "s1"
 if (len(sys.argv) > 2):
-  fileheader = str(sys.argv[2])
+  cw = sys.argv[2]
+fileheader = "f{}-{}".format(sf, cw)
 print("File Header: {}".format(fileheader))
 print("Running With Scaling Factor {} (1/sf)".format(1/sf))
 
@@ -88,14 +97,91 @@ for i in range(0,len(noises.values())):
     for j in range(0,len(noi)):
       n  = noi[j].detach().numpy()
       ca = int(cpa[j])
-      # replace variance calcuoation with sqrt(||noise||^2/||original||^2)
-      nse_var[ctr, ca, int(nse_ind[ctr,ca])] = np.sqrt(np.var(n)/np.var(o))
+
+      nse_var[ctr, ca, int(nse_ind[ctr,ca])] = n_mag(n,o,"sqrt")
       nse_ind[ctr, ca]+=1
-      nse_all = np.append(nse_all, np.sqrt(np.var(n)/np.var(o)))
+      nse_all = np.append(nse_all, n_mag(n,o,"sqrt"))
       n_min = np.min([n_min, np.min(n)])
       n_max = np.max([n_max, np.max(n)])
     # while we're here, grab 
-a_max = np.max(np.abs([n_min, n_max]))
+    a_max = np.max(np.abs([n_min, n_max]))
+    a_min = np.min(np.abs([n_min, n_max]))
+
+# X = np.random.rand(100, 1000)
+# loop through data
+# hardcode 100 buckets from 0 to amax
+buckets = np.arange(0,a_max, a_max/100)
+counts= np.zeros(len(buckets))
+xs = np.zeros(len(nse_all))
+ys = np.zeros(len(nse_all))
+adv_ims = np.zeros([len(nse_all),sli,swi])
+count = 0
+print("Starting to build histogram")
+for idx in range(0,len(ox)):
+  matidx = 0
+  if (idx % 50 == 0):
+    print("Finished dumping through {}/{}".format(idx, len(ox)))
+
+  orig_im = ox[idx].reshape(sli,swi)
+  if (len(noises[idx]) > 0):
+    ct  = int(ctrue[idx])
+    cp  = int(cpred[idx])
+    for i in range(0,len(noises[idx])):
+      noi = noises[idx][i]
+      ca  = cpred_a[idx][i]
+      nse_im = noi.detach().numpy().reshape(sli,swi)
+      adv_im  = orig_im + nse_im
+      disp_im = np.concatenate((orig_im, adv_im, nse_im), axis=1)
+      nse_va = n_mag(nse_im, orig_im, "sqrt")
+      # for each datapoint find its bucket
+      adv_ims[count] = adv_im
+
+      ind = sum(buckets < nse_va) - 1
+      bucket = buckets[ind]
+      #, make its x-coordinate its bucket 
+      xs[count] = bucket
+      # and its y coordinate the old y for that bucket --
+      #print("ys[count] = counts[ind]: {}[{}] = {}[{}]".format(ys, count, counts, ind))
+      ys[count] = counts[ind]
+      # increment the bucket
+      counts[ind]+=1
+      count+=1
+
+      
+
+
+
+# replace xs and ys with positions for generated histogram
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.set_title('click on point to show image: {} - Mean: {}'.format(fileheader, np.mean(nse_all)))
+line, = ax.plot(xs, ys, 'o', picker=1)  # 5 points tolerance
+
+
+def onpick(event):
+
+    if event.artist!=line: return True
+
+    N = len(event.ind)
+    if not N: return True
+
+
+    figi = plt.figure()
+    for subplotnum, dataind in enumerate(event.ind):
+      print("ind: {}".format(dataind))
+      ax = figi.add_subplot(N,1,subplotnum+1)
+      ax.imshow(adv_ims[dataind])
+      ax.text(0.05, 0.9, 'noise=%1.3f'%(xs[dataind]),
+                transform=ax.transAxes, va='top')
+        #ax.set_ylim(-0.5, 1.5)
+    figi.show()
+    return True
+
+fig.canvas.mpl_connect('pick_event', onpick)
+
+plt.show()
+
 
 
 
@@ -106,7 +192,7 @@ print(nse_all)
 plt.hist(nse_all, 100)
 fig1.set_size_inches(18, 9)
 fo = ddir+"/"+fileheader+"-hist-all.png"
-plt.title("Overall Histogram, Mean: {}".format(np.mean(nse_all)))
+plt.title("Overall Histogram: {} -  Mean: {}".format(fileheader, np.mean(nse_all)))
 fig1.savefig(fo, dpi=100)  
 print("Saved all histogram to {}".format(fo))
 # keep these for reference later
@@ -135,17 +221,19 @@ fig2.savefig(fo, dpi=100)
 print("Saved each histogram to {}".format(fo))
 
 # dump a bunch of examples
-for idx in range(0,len(ox)):
-  matidx = 0
-  if (idx % 50 == 0):
-    print("Finished dumping through {}/{}".format(idx, len(ox)))
 
-  orig_im = ox[idx].reshape(sli,swi)
-  if (len(noises[idx]) > 0):
-    ct  = int(ctrue[idx])
-    cp  = int(cpred[idx])
-    fig= plt.figure()
-    for i in range(0,len(noises[idx])):
+if (False):
+  for idx in range(0,len(ox)):
+    matidx = 0
+    if (idx % 50 == 0):
+      print("Finished dumping through {}/{}".format(idx, len(ox)))
+
+    orig_im = ox[idx].reshape(sli,swi)
+    if (len(noises[idx]) > 0):
+      ct  = int(ctrue[idx])
+      cp  = int(cpred[idx])
+      fig= plt.figure()
+      for i in range(0,len(noises[idx])):
         noi = noises[idx][i]
         ca  = cpred_a[idx][i]
         nse_im = noi.detach().numpy().reshape(sli,swi)
@@ -157,11 +245,17 @@ for idx in range(0,len(ox)):
         plt.xticks([])
         plt.yticks([])
         plt.colorbar()
-        plt.title("Orig: {} | New: {} | Var: {:.2f})".format(ct, ca, np.sqrt(np.var(nse_im)/np.var(orig_im))))
+        plt.title("Orig: {} | New: {} | Var: {:.2f})".format(ct, ca, n_mag(nse_im, orig_im, "sqrt")))
 
-    fig.set_size_inches(18, 9)
-    fo = idir+"/"+fileheader+"-FGSM-{}-{}.png".format(idx, int(ctrue[idx]))
-    fig.savefig(fo, dpi=100)  
+      fig.set_size_inches(18, 9)
+      fo = idir+"/"+fileheader+"-FGSM-{}-{}.png".format(idx, int(ctrue[idx]))
+      fig.savefig(fo, dpi=100)  
+ 
+# display interactive histogram
+
+
+
+
 
 
 
@@ -275,3 +369,4 @@ for idx in range(0,len(ox)):
 
 # plt.hist(aorigi[1]+noises[1],sli)
 # plt.show()
+
