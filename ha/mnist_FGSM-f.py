@@ -34,23 +34,26 @@ from conf import *
 # parser.add_argument("-factor", "-fileheader", required=False)
 # parser.parse_args()
 
+# put everything in a universal config file
+# only command argument is the location of that config file. 
+# conf, scaling, location of data files -- if they already exist with a certain date, use those. 
 def main():
-  # system arguments and size variables
-  sf = 1
-  if (len(sys.argv) > 1):
-    sf = np.float(sys.argv[1])
-  cw = "s1"
-  if (len(sys.argv) > 2):
-    cw = sys.argv[2]
-  fileheader = "f{}-{}".format(sf, cw)
-  print("File Header: {}".format(fileheader))
-  print("Running With Scaling Factor {} (1/sf)".format(1/sf))
+  # read the configuration
+
+
+  # sf = 1
+  # if (len(sys.argv) > 1):
+  #   sf = np.float(sys.argv[1])
+  # cw = "s1"
+  # if (len(sys.argv) > 2):
+  #   cw = sys.argv[2]
+  # fileheader = "f{}-{}".format(sf, cw)
+  # print("File Header: {}".format(fileheader))
+  # print("Running With Scaling Factor {} (1/sf)".format(1/sf))
   
-  sl = 28
-  sw = 28
   
   #conf = [int(sl * sw / sf / sf), int(100 / sf / sf), 10]
-  conf = net_config("s1", sl, sw, sf)
+  #conf = net_config("s1", sl, sw, sf)
   print(conf)
 
   
@@ -82,9 +85,23 @@ def main():
       odir = "/home/bwbell/Adversarial-Examples-in-PyTorch/mnist_scale"
       os.makedirs(odir, exist_ok=True)
   
-  fo    = ddir + "/Config-2-weights.pkl"
-  wfile = ddir + "/Config-2-weights-"+fileheader+".pkl"
-  efile = ddir + "/mnist_examples-"+fileheader+".pkl"
+  fi = ddir + "/configuration-"+fileheader+".npy"
+  cdict = np.load(fi).item()
+  conf = cdict["conf"]
+  sf =  cdict["scale"]
+  cw =  cdict["net"]
+  wfile = cdict["wfile"]
+  efile = cdict["efile"]
+  afile = cdict["afile"]
+  sl = cdict["sl"]
+  sw = cdict["sw"]
+
+  # optionally supply location of these files
+  # fo    = ddir + "/Config-2-weights.pkl"
+  # wfile = ddir + "/Config-2-weights-"+fileheader+".pkl"
+  # wfile = ddir + "/Config-2-weights-"+fileheader+".npy"
+  # efile = ddir + "/mnist_examples-"+fileheader+".pkl"
+  # efile = ddir + "/mnist_examples-"+fileheader+".npy"
   
   # Define Attack Network
   class Net(nn.Module):
@@ -149,8 +166,9 @@ def main():
   		# load the weights from training
   wweights_dict = {}
   assert os.path.isfile(wfile), "Error: Invalid {} ".format(wfile)
-  with open(wfile, "rb") as f:
-      wweights_dict = pickle.load(f)
+  # with open(wfile, "rb") as f:
+  #     wweights_dict = pickle.load(f)
+  wweights_dict = np.load(wfile).item()      
   for param in nnet.named_parameters():
       if param[0] in wweights_dict.keys():
           print("Copying: ", param[0])
@@ -158,9 +176,10 @@ def main():
   print("Weights Loaded!")
   
   # Load examples
-  with open(efile,"rb") as f:  
-      examples = pickle.load(f) 
-  
+  # with open(efile,"rb") as f:  
+  #     examples = pickle.load(f) 
+  examples = np.load(efile).item()
+
   ims1 = examples["images"]
   # Reshape
   ims2 = [im.reshape(sl,sw) for im in ims1]
@@ -389,6 +408,16 @@ def main():
                    "cpred_a":cpred_a_l,
                    "noises": noise_l }
       pickle.dump(save_dict, f) 
+  fo = ddir+"mnist_attack-L2Loss-"+fileheader+".npy"
+  #with open(fo,"wb") as f: 
+  save_dict = {"ox":ox, 
+               "ctrue":ctrue_l,
+               "cpred":cpred_l,
+               "ctar":ctar_l,                 
+               "cpred_a":cpred_a_l,
+               "noises": noise_l }
+  np.save(fo, save_dict)
+
   print("Dumped to: {}".format(fo))
    
   

@@ -65,6 +65,8 @@ def main():
           return x
   
   
+
+
   sf = 1
   if (len(sys.argv) > 1):
     sf = np.float(sys.argv[1])
@@ -80,13 +82,38 @@ def main():
   
   #conf = [int(sl * sw / sf / sf), int(100 / sf / sf), 10]
   conf = net_config(cw, sl, sw, sf)
-  
+  # TODO add a date or configuration index
+  # training weights file (mnist_train-f.py)
+  wfile = ddir + "/Config-2-weights-"+fileheader+".npy"
+  # examples file (mnist_train-f.py)
+  efile = ddir + "/mnist_examples-"+fileheader+".npy"
+  # attacks (mnist-FGSM-f.py)
+  afile = ddir+"mnist_attack-L2Loss-"+fileheader+".npy"
+
+  fo = ddir + "/configuration-"+fileheader+".npy"
+  cdict = {"conf":  conf,
+           "scale": sf,
+           "net":   cw,
+           "wfile": wfile,
+           "efile": efile,
+           "afile": afile,
+           "sl": sl,
+           "sw": sw
+          }
+  np.save(fo, cdict)
+    
   net = Net(conf)
   output_fil = nn.CrossEntropyLoss()  # error function
   # pick an optimizer -- pytorch has many
   # TODO : Look up why momentum works
   weight_opt = optim.SGD(net.parameters(), lr=0.01, momentum=0.9,
                          weight_decay=0.00001)
+  # dump config file with what we're going to do
+  fo = 
+  # put everything in a universal config file
+  # only command argument is the location of that config file. 
+  # conf, scaling, location of data files -- if they already exist with a certain date, use those. 
+
   
   
   # dataloaders copied from github.com/akshaychawla
@@ -192,6 +219,11 @@ def main():
   
       data_dict = {"images": images_o, "labels": labels_o}
       cPickle.dump(data_dict, f)
+  fo = ddir + "/mnist_examples-"+fileheader+".npy"
+  #with open(fo,"wb") as f: 
+  data_dict = {"images": images_o, "labels": labels_o}
+  np.save(fo, data_dict)
+
   
   print("Dumping training weights to disk")
   weights_dict = {}
@@ -207,6 +239,10 @@ def main():
       import _pickle as cPickle
   
       cPickle.dump(weights_dict, f)
+  fo = ddir + "/Config-2-weights-"+fileheader+".npy"
+  #with open(fo,"wb") as f: 
+  np.save(fo, weights_dict)
+
   print("Finished dumping to {}".format(fo))
   
 if __name__ == '__main__':

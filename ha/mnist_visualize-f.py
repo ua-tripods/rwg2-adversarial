@@ -15,7 +15,7 @@ def n_mag(ni, oi, method):
   else:
     return np.sqrt(np.var(ni)/np.var(oi))
 
-#pfile = "C:/Users/Nexus/Google Drive/dropbox/Dropbox/UOFA/0-research/network/rwg2-adversarial/2018-10-01-mnist_attack.pkl" 
+#afile = "C:/Users/Nexus/Google Drive/dropbox/Dropbox/UOFA/0-research/network/rwg2-adversarial/2018-10-01-mnist_attack.pkl" 
 
 # Sort out Directories
 sfile = "C:/Users/Nexus/Google Drive/dropbox/Dropbox/UOFA/0-research/network/rwg2-adversarial/ha/imnet_fgsm.py"
@@ -67,12 +67,17 @@ swi = int(sw/sf)
 fo    = ddir + "/Config-2-weights.pkl"
 wfile = ddir + "/Config-2-weights-"+fileheader+".pkl"
 efile = ddir + "/mnist_examples-"+fileheader+".pkl"
-pfile = ddir+"mnist_attack-L2Loss-"+fileheader+".pkl"
+afile = ddir+"mnist_attack-L2Loss-"+fileheader+".pkl"
+wfile = ddir + "/Config-2-weights-"+fileheader+".npy"
+efile = ddir + "/mnist_examples-"+fileheader+".npy"
+afile = ddir+"mnist_attack-L2Loss-"+fileheader+".npy"
 
-#pfile = "C:/Users/DuxLiteratum/Google Drive/dropbox/Dropbox/UOFA/0-research/network/rwg2-adversarial/2018-10-01-mnist_attack.pkl" 
-#pfile = "/home/bwbell/Dropbox/UOFA/0-research/network/rwg2-adversarial/2018-10-01-mnist_attack.pkl" 
-with open(pfile, "rb") as f: 
-    adict = pickle.load(f) 
+#afile = "C:/Users/DuxLiteratum/Google Drive/dropbox/Dropbox/UOFA/0-research/network/rwg2-adversarial/2018-10-01-mnist_attack.pkl" 
+#afile = "/home/bwbell/Dropbox/UOFA/0-research/network/rwg2-adversarial/2018-10-01-mnist_attack.pkl" 
+# with open(afile, "rb") as f: 
+#     adict = pickle.load(f) 
+adict = np.load(afile).item()
+print("finished loading adversarial examples from: {}".format(afile))
 
 ox = adict["ox"]
 noises  = adict["noises"]
